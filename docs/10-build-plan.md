@@ -1,5 +1,11 @@
 # 10 — Build Plan
 
+> 2026-10-19 completion update: [doc 13](13-completion-plan.md) refines these phases for
+> autonomous paper and a private website; [doc 14](14-robinhood-and-data.md) covers provider
+> research. Preserve phase order. Phase 4 requires deterministic operational scenarios and
+> selective defensible replay, rather than an exhaustive cross-asset historical report.
+> Paper permission policies are separate from live L0; no autonomy is enabled by this plan.
+
 Build in phases; each has an exit criterion. Do not skip ahead to live trading. Backtest
 and live share one engine, so most phases are built and proven offline first.
 

@@ -1,5 +1,12 @@
 # 07 — Safety and Autonomy
 
+> 2026-10-19 paper-only clarification: doc 13 proposes autonomous paper entries within
+> an explicit owner-set category policy after Phases 0-5 validation. Live remains L0 until
+> separately authorized/promoted; paper autonomy cannot promote live. HALT must preserve
+> genuine risk reductions, evaluated at package/portfolio level. Do not assume a distinct
+> read-only Alpaca retail key exists; use verified scopes or an enforced GET-only interface.
+> Runtime defaults have not changed.
+
 Guiding principle: **you must be able to stop trading without the agent's cooperation,
 and nothing about safety depends on the LLM behaving.** Autonomy is earned per category
 of action; the kill switches and code guardrails never relax.

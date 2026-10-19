@@ -1,5 +1,11 @@
 # 09 — Evaluation
 
+> 2026-10-19 scope update: an exhaustive historical backtest is optional before paper.
+> Doc 13 defines the mandatory scenario tests and selective replay, followed by forward
+> paper evidence. Experimental overlays can be evaluated in shadow with forward records;
+> required fallback protection must be explicitly approved as policy or the trade is skipped.
+> Missing history is reported, never synthesized into precise benchmark performance.
+
 The question evaluation must answer: **are we following Crown, and where we deviate, is it
 costing or helping?** Raw P&L alone can't answer that.
 

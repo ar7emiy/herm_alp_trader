@@ -48,6 +48,21 @@ Read in order. These are the build spec.
 | [docs/11-runbook.md](docs/11-runbook.md) | Day-to-day operation and failure modes |
 | [docs/12-glossary.md](docs/12-glossary.md) | Crown's vocabulary and operating principles (from the base guide) |
 
+## Current completion plan (2026-10-19)
+
+The baseline is committed; the trading service and website are still to be built.
+[docs/13-completion-plan.md](docs/13-completion-plan.md) defines the path to autonomous
+paper trading and a private operations dashboard, including release gates and the smaller
+first instrument scope. [docs/14-robinhood-and-data.md](docs/14-robinhood-and-data.md)
+records official Robinhood MCP research and current Alpaca assumptions to verify.
+
+These updates preserve Phase 0 first. Historical replay remains useful, but an exhaustive
+cross-asset backtest is not a prerequisite for paper; deterministic operational scenarios
+and forward paper evidence are required. No paper or live orders are enabled by these docs.
+
+Crown letters/source PDFs, credentials, and runtime data stay local and are gitignored.
+The project requires separately supplied private letters; none are distributed with it.
+
 ## Decision log
 
 | # | Decision | Status |

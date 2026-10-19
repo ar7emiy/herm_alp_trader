@@ -86,3 +86,14 @@ don't build them earlier.
 
 Expected run cost ~$10–25/mo (VPS + sparse OpenAI calls). Flag it if an implementation
 drifts far from that.
+
+## Completion-plan update (2026-10-19)
+
+Read `docs/13-completion-plan.md` and `docs/14-robinhood-and-data.md` after docs 01-12.
+They specify the user's current priority: autonomous paper within an owner-set policy,
+plus a private dashboard; exhaustive historical backtesting is optional. Phase 0 still
+comes first, and no live adapters are built before the preceding phase gates. The
+prototype suite has 57 passing tests as of 2026-10-19; this is not paper readiness.
+Robinhood is researched but unconnected and is intended as a read-tool-allowlisted
+research source. Alpaca remains the execution broker. Keep source PDFs, extracts,
+credentials, and runtime account data out of git.

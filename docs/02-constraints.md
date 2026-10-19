@@ -1,5 +1,13 @@
 # 02 — Constraints
 
+> 2026-10-19 verification update: see [doc 14](14-robinhood-and-data.md) for current
+> sources. Treat cash-only as the required operating policy, not proof of the broker's
+> legal classification. Do not infer account type from multiplier alone. Replace old PDT
+> assumptions with current broker restrictions; the probe still reads a deprecated field.
+> Fractional stops are documented with DAY time in force; bracket/OCO and renewals require
+> paper verification. The older rows below are requirements/assumptions to check, not a
+> verified capability matrix.
+
 Every reason the system cannot replicate Crown 1:1, what it implies, and how the design
 handles it. Items marked **VERIFY** are assumptions about Alpaca or the account that
 Phase 0 (doc 10) must confirm against the real account before anything is built on them.

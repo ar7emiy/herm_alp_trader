@@ -1,5 +1,10 @@
 # 11 — Runbook
 
+> 2026-10-19 launch clarification: the intended paper release can run unattended within
+> an explicit owner-set category policy (doc 13). Live entries remain governed by doc 07.
+> A future live launch requires a separate explicit configuration/authorization gate;
+> changing keys alone must never switch the system into live trading.
+
 ## Normal week
 
 - **When a letter lands (usually Monday, sometimes mid-week):** the system extracts,

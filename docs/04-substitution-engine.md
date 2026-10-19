@@ -1,5 +1,11 @@
 # 04 — Substitution Engine
 
+> 2026-10-19 modeling clarification: credit/debit labels alone do not determine payoff
+> fidelity. Same-expiry, same-strike verticals can have economically equivalent terminal
+> payoffs through put-call parity, subject to prices, carry/dividends, exercise risk and
+> account feasibility. Doc 13 requires exact scenario/payoff checks before substitution;
+> the coarse family labels and examples below are not sufficient eligibility rules.
+
 For each Crown position the engine answers: **what is the most faithful expression of this
 bet that a $5k cash account can actually hold — or should we skip it?** The LLM proposes
 candidates; code filters, scores, and chooses; the result is recorded with every rejected
