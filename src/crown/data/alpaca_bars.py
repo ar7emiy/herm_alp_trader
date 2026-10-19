@@ -1,0 +1,87 @@
+"""Historical bars from Alpaca's free-tier market data API, cached to
+parquet so a backtest re-run costs zero API calls. Only historical data is
+used here — paper trading keys are sufficient (03-build-plan.md Phase 1);
+nothing in this module submits an order or touches the last-15-minutes
+real-time restriction."""
+from __future__ import annotations
+
+from datetime import date, datetime, timezone
+from pathlib import Path
+
+import pandas as pd
+from alpaca.data.historical import StockHistoricalDataClient
+from alpaca.data.requests import StockBarsRequest
+from alpaca.data.timeframe import TimeFrame
+
+from crown.config import Config, alpaca_credentials
+
+BAR_COLUMNS = ["open", "high", "low", "close", "volume"]
+
+
+def _cache_path(cfg: Config, cache_key: str, start: date, end: date) -> Path:
+    cfg.paths.bars.mkdir(parents=True, exist_ok=True)
+    return cfg.paths.bars / f"{cache_key}_{start}_{end}.parquet"
+
+
+def _fetch_bars(
+    symbols: list[str],
+    start: date,
+    end: date,
+    cfg: Config,
+    timeframe: TimeFrame,
+    cache_suffix: str,
+    force: bool,
+) -> dict[str, pd.DataFrame]:
+    symbols = sorted(set(symbols))
+    result: dict[str, pd.DataFrame] = {}
+    missing: list[str] = []
+
+    for sym in symbols:
+        path = _cache_path(cfg, f"{sym}{cache_suffix}", start, end)
+        if path.exists() and not force:
+            result[sym] = pd.read_parquet(path)
+        else:
+            missing.append(sym)
+
+    if not missing:
+        return result
+
+    key, secret = alpaca_credentials()
+    client = StockHistoricalDataClient(key, secret)
+    request = StockBarsRequest(
+        symbol_or_symbols=missing,
+        timeframe=timeframe,
+        start=datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc),
+        end=datetime.combine(end, datetime.min.time(), tzinfo=timezone.utc),
+        adjustment="raw",
+    )
+    df = client.get_stock_bars(request).df
+
+    for sym in missing:
+        if sym not in df.index.get_level_values(0):
+            sym_df = pd.DataFrame(columns=BAR_COLUMNS)
+            sym_df.index.name = "timestamp"
+        else:
+            sym_df = df.xs(sym, level=0)[BAR_COLUMNS].copy()
+            sym_df.index = pd.to_datetime(sym_df.index, utc=True)
+        sym_df.to_parquet(_cache_path(cfg, f"{sym}{cache_suffix}", start, end))
+        result[sym] = sym_df
+
+    return result
+
+
+def fetch_minute_bars(
+    symbols: list[str], start: date, end: date, cfg: Config, force: bool = False,
+) -> dict[str, pd.DataFrame]:
+    """One DataFrame per symbol, indexed by UTC timestamp, columns
+    open/high/low/close/volume — the primary series the zone-check engine
+    and fill simulator replay against."""
+    return _fetch_bars(symbols, start, end, cfg, TimeFrame.Minute, "", force)
+
+
+def fetch_daily_bars(
+    symbols: list[str], start: date, end: date, cfg: Config, force: bool = False,
+) -> dict[str, pd.DataFrame]:
+    """Daily bars — used for options expiry settlement (intrinsic value from
+    the closing price on the expiry date), not for minute-by-minute replay."""
+    return _fetch_bars(symbols, start, end, cfg, TimeFrame.Day, "_daily", force)

@@ -1,0 +1,79 @@
+{
+  "letter_date": "2026-06-22",
+  "is_mid_cycle": false,
+  "calendar": [
+    {"event": "MU earnings", "datetime": "2026-06-24T16:00", "hits": "semis/memory tone", "affects_trades": ["MU", "SOXX"]},
+    {"event": "PCE + final Q1 GDP", "datetime": "2026-06-25T08:30", "hits": "rates, inflation path", "affects_trades": ["GLD", "IWM"]}
+  ],
+  "featured_trades": [
+    {
+      "symbol": "MU", "strategy": "iron_condor",
+      "conviction": "3/5", "conviction_raw": "●●●○",
+      "conviction_flag": "glyph_count_mismatch",
+      "status": "planned", "event": "MU earnings Wed 6/24 after close", "expiry": "2026-06-26",
+      "legs": [
+        {"action": "sell", "right": "put", "strike": 900, "expiry": "2026-06-26"},
+        {"action": "buy", "right": "put", "strike": 800, "expiry": "2026-06-26"},
+        {"action": "sell", "right": "call", "strike": 1350, "expiry": "2026-06-26"},
+        {"action": "buy", "right": "call", "strike": 1450, "expiry": "2026-06-26"}
+      ],
+      "target_credit": 18.0, "min_credit": 16.5, "skip_below": 16.0,
+      "max_profit": 18.2, "max_risk": 81.8,
+      "breakevens": {"down": 881.8, "up": 1368.2},
+      "entry_conditions": {"underlying_low": 1085, "underlying_high": 1180, "min_credit": 16.5},
+      "sizing_multiplier": 0.75,
+      "management": "Take profit if condor compresses fast post-earnings; don't hold to expiry blindly.",
+      "invalidation": "Open >$1,200 -> don't chase call side. Open <$1,060 -> recheck put side.",
+      "entry_window_close": "2026-06-23"
+    }
+  ],
+  "tactical_summary": [
+    {
+      "market": "GLD Jun26 385/375 put spread", "trade_type": "debit_spread", "view": "bearish",
+      "entry_trigger": {"type": "entered", "level": 3.00, "condition": "entered Thu ~$3.00 debit", "triggered": true},
+      "stop": {"type": "behavioral", "rule": "invalidation = reclaim of $391-392 zone"},
+      "targets": [], "sizing_multiplier": null
+    },
+    {
+      "market": "MSFT Jun26 392.5/400 bear call", "trade_type": "bear_call", "view": "bearish",
+      "entry_trigger": {"type": "entered", "level": 0.95, "condition": "~$0.95-1.00 credit", "triggered": true},
+      "stop": {"type": "dollar_loss", "value": 655}, "targets": [], "sizing_multiplier": null
+    },
+    {
+      "market": "RKLB / SPCE+RDW", "trade_type": "pair", "view": "pair",
+      "entry_trigger": {"type": "entered", "level": 5.0, "condition": "spread entered low-5s", "triggered": true},
+      "stop": {"type": "behavioral", "rule": "monetize if momentum fades"},
+      "targets": [{"tier": "T1", "level": 6.25}], "sizing_multiplier": null
+    },
+    {
+      "market": "XLV/XLP/XLF vs IGV", "trade_type": "other", "view": "breakdown_hedge",
+      "entry_trigger": {"type": "entered", "level": null, "condition": "re-entered post-FOMC", "triggered": true},
+      "stop": {"type": "behavioral", "rule": "risk = sustained rotation back to AI leadership"},
+      "targets": [{"tier": "T1", "level": 3.59}, {"tier": "T2", "level": 3.79}], "sizing_multiplier": null
+    },
+    {
+      "market": "USDJPY conditional short", "trade_type": "other", "view": "bearish",
+      "entry_trigger": {"type": "conditional", "level": 157.50, "condition": "never triggered", "triggered": false},
+      "stop": {"type": "behavioral", "rule": "next setup is failed-breakout/intervention reversal, not a direct short"},
+      "targets": [], "sizing_multiplier": null
+    }
+  ],
+  "positioning": [],
+  "notable_flow": [],
+  "previous_week_review": [],
+  "house_view": [
+    {"asset_class": "Equities", "view": "Constructive, hedged", "driver": "holds if SPX > 7500"},
+    {"asset_class": "Gold", "view": "Bearish", "driver": "hawkish Fed, firmer real yields"},
+    {"asset_class": "Oil", "view": "Neutral (headline driven)", "driver": "Hormuz risk alive, not dominant"},
+    {"asset_class": "Short-end rates", "view": "Neutral-to-bullish", "driver": "PCE is next test"},
+    {"asset_class": "Long-end rates", "view": "Bullish tactically", "driver": "rate pressure overdone if oil contained"},
+    {"asset_class": "Credit", "view": "Constructive", "driver": "spreads contained"},
+    {"asset_class": "Dollar", "view": "Neutral-to-bullish", "driver": "USDJPY >160 intervention risk"}
+  ],
+  "key_levels": [
+    {"symbol": "SPX", "level": 7500, "meaning": "battleground; support->resistance after hawkish Fed"},
+    {"symbol": "SPX", "level": 7457, "meaning": "zero-gamma; below loses dealer support"},
+    {"symbol": "SPX", "level": 7400, "meaning": "put wall, first downside support"},
+    {"symbol": "SPX", "level": 7000, "meaning": "deep downside support"}
+  ]
+}

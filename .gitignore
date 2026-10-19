@@ -1,0 +1,30 @@
+﻿# Private credentials and local assistant settings
+.env*
+!.env.example
+.claude/
+.codex/
+.cursor/
+.mcp.json
+
+# Crown letters and source PDFs stay local
+/crown_letters/
+*.pdf
+
+# Runtime data, extracted letter content, reports, and account probes
+/data/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Python build and test output
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/

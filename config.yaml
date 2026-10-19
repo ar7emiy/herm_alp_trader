@@ -1,0 +1,99 @@
+# config.yaml — the agent reads these, never infers them.
+# See 06-sizing-and-alternatives.md for the sizing math this drives.
+
+sizing:
+  # ANSWER (README.md, "the $5k question"): $5,000 IS the tactical sleeve —
+  # the user holds ~$25-50k investable elsewhere. Do not treat this as total
+  # investable assets; that would collapse the sleeve to $500-750 (see README).
+  sleeve_override: 5000
+  investable_assets: null       # unused while sleeve_override is set
+  tactical_sleeve_pct: 0.15     # only used if sleeve_override is null
+  risk_per_1_00_position: 0.015 # 1.5% of sleeve risked per a 1.00-sized trade
+
+guardrails:
+  # Deterministic, code-enforced limits (02-kill-switch.md). Never relaxed
+  # by the model's reasoning.
+  #
+  # NOTE on max_order_notional: 02-kill-switch.md gives "$200" only as an
+  # illustrative example, not a value derived from the $5k-sleeve answer.
+  # Risk budget (what a stop-out costs, e.g. $75 at 1.00 sizing) and notional
+  # (shares * price, what the position is actually worth) are different
+  # numbers — at a realistic 2% stop distance, a $75-risk position already
+  # has ~$3,750 of notional. A literal $200 cap would guardrail-reject
+  # nearly every correctly-sized trade in this system. Set to 40% of the
+  # sleeve as a backstop against a runaway/erroneous order size, not as the
+  # primary sizing control (that's the risk-budget math in 06). Revisit this
+  # number once real position sizes from a backtest run are in hand.
+  max_order_notional: 2000
+  max_concurrent_positions: 4
+  daily_loss_limit: 150
+  allowed_order_types: ["limit", "stop_limit", "bracket", "market"]
+  halt_file: "data/HALT"
+
+no_chase:
+  max_pct_from_trigger: 0.05   # price must be within 5% of the published trigger
+  default_watch_days: 14       # a conditional trigger with no explicit window
+                                # closes this many calendar days after the
+                                # letter that introduced it, if never hit
+
+alternative_finder:
+  min_edge_ratio: 1.5          # max gain / current cost, minimum acceptable
+  min_days_to_expiry: 3
+  default_proxy_stop_pct: 0.03 # last-resort equity-proxy stop distance when
+                                # a tactical options row gives no price-based
+                                # invalidation at all (only a dollar-loss cap
+                                # on the spread) — clearly logged wherever used
+  missing_multiplier_default: 0.25  # smallest standard tier; used only when
+                                     # the letter gives no sizing_multiplier
+                                     # at all, always logged, never silent
+
+scheduling:
+  # Tiering table from 07-scheduling.md. Distances are fractional (0.05 = 5%).
+  tiers:
+    - {max_distance: null, cadence_minutes: 60}   # > 5% away -> hourly (base)
+    - {max_distance: 0.05, cadence_minutes: 30}   # 2-5% away -> every 30 min
+    - {max_distance: 0.02, cadence_minutes: 12}   # < 2% / inside band -> 10-15 min
+  max_concurrent_tight_jobs: 3
+
+backtest:
+  start_date: "2026-06-01"
+  end_date: null                # null = compile through the latest letter found
+  letters_dir: "crown_letters"
+  data_dir: "data"
+  # Approval is simulated as a policy, not the user's real judgment.
+  approval_latency_minutes: 45
+  approval_rate: 1.0            # fraction of well-formed staged trades approved
+
+paths:
+  parsed_letters: "data/parsed"
+  plans: "data/plans"
+  bars: "data/bars"
+  trade_log_db: "data/logs/trades.db"
+  reports: "data/reports"
+  extracted_letters: "data/extracted"
+  probe: "data/probe"
+
+# Legacy: model id for the v1 prototype parser (crown.compiler.parse_letter).
+# Superseded by `llm` below; removed in Phase 1.
+model:
+  id: "claude-opus-4-8"
+
+# LLM provider (README decision D4). Model ids are pinned here, never chosen
+# by code. Run `crown llm-check` to list the models your key can use.
+llm:
+  provider: "openai"
+  extract_model: "gpt-5"          # vision extraction of image-only letter PDFs
+  extract_reasoning_effort: "medium"
+  extract_max_output_tokens: 32000
+  extractor_version: "v3.0"       # bump when the prompt or schema changes; cache is keyed on it
+
+# What the ACCOUNT can actually do (docs/02-constraints.md). Filled in from
+# `crown probe` output against the real account — never assumed. Until then,
+# the most restrictive settings apply.
+capabilities:
+  account_type: "cash"            # D2 — decided
+  verified: false                 # set true once `crown probe` confirms against the live account
+  options_level: 0                # 0 = no options until verified
+  allow_debit_spreads: false
+  allow_long_options: false
+  allow_fractional: false
