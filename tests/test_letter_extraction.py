@@ -15,7 +15,7 @@ from crown.letter.audit import AuditIssue, PageReview, audit_record, record_hash
 from crown.letter.inventory import build_report, needs_substitution
 from crown.letter.schema import (
     Conviction, CrownPosition, Entry, Instrument, LetterExtraction, LifecycleUpdate,
-    Source, Stop, Structure, Thesis,
+    PageCoverage, Source, Stop, Structure, Thesis,
 )
 
 SRC = Source(page=1, quote="q")
@@ -24,9 +24,10 @@ SRC = Source(page=1, quote="q")
 def _position(key: str, primary: str, stype: str, view: str, asset_class: str = "etf",
               status: str = "entered") -> CrownPosition:
     return CrownPosition(
-        position_key=key, thesis_key="t1", status=status,
+        position_key=key, thesis_key="t1", status=status, setup_state="active",
         instrument=Instrument(primary=primary, alternatives=[], asset_class=asset_class),
         structure=Structure(type=stype, legs=[], net_price=None, net_price_kind="unknown",
+                            net_price_context="not_stated", max_loss_unit="not_stated",
                             max_loss_per_unit=None, max_gain_per_unit=None,
                             breakeven_low=None, breakeven_high=None),
         view=view,
@@ -34,7 +35,7 @@ def _position(key: str, primary: str, stype: str, view: str, asset_class: str = 
                     condition=None, triggered=True, window_close=None),
         stop=Stop(type="price", level=95.0, dollar=None, rule=None, sessions=None),
         targets=[], sizing_multiplier=0.5, event_dependency=None, management_notes=None,
-        hedges_position_keys=[], source=SRC,
+        hedges_position_keys=[], reported_terms=[], source=SRC,
     )
 
 
@@ -47,7 +48,8 @@ def _letter(letter_date: str, positions: list[CrownPosition],
     return LetterExtraction(letter_date=letter_date, is_mid_cycle=False, section_names_seen=[],
                             theses=[thesis], crown_positions=positions,
                             lifecycle_updates=updates or [], levels=[], events=[],
-                            house_view=[], review_flags=[])
+                            house_view=[], review_flags=[], page_coverage=[
+                                PageCoverage(page=1, sections=[], position_keys=[], notes=None)])
 
 
 def test_schema_is_openai_strict_compatible():
@@ -70,6 +72,7 @@ class _FakeResponses:
         self.calls += 1
         assert kwargs["text_format"] is LetterExtraction
         assert kwargs["input"][0]["content"][0]["type"] == "input_file"
+        assert kwargs["input"][0]["content"][0]["detail"] == "high"
         assert kwargs["store"] is False
         return SimpleNamespace(
             status="completed", incomplete_details=None, output=[], model="fake-model",
@@ -144,6 +147,8 @@ def test_changed_model_or_glossary_invalidates_cache(letters_cfg, monkeypatch):
     extract_mod.extract_letter(pdf, cfg=cfg, client=client)
     changed = dataclasses.replace(cfg, llm=dataclasses.replace(cfg.llm, extract_model="different-model"))
     assert extract_mod.load_cached(changed, pdf) is None
+    changed_detail = dataclasses.replace(cfg, llm=dataclasses.replace(cfg.llm, extract_pdf_detail="low"))
+    assert extract_mod.load_cached(changed_detail, pdf) is None
     monkeypatch.setattr(extract_mod, "_system_prompt", lambda: "corrected glossary")
     assert extract_mod.load_cached(cfg, pdf) is None
 

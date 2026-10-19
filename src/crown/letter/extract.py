@@ -86,6 +86,41 @@ RULES
     a number that is hard to read in the image, a table that seems cut off), add a
     review_flag naming the field and the reason, and extract your best literal
     reading. Never silently resolve an ambiguity.
+12. COMPLETE PAGE SWEEP. Read every PDF page, including charts and continuation
+    pages. Fill page_coverage for EVERY page, even cover/disclaimer pages. Each
+    position_keys list refers to positions discussed on that page. Do not limit
+    extraction to featured trades: core holdings, same-day expiries, reopened
+    baskets, and closed overlays on still-open core holdings are distinct items.
+13. QUOTE CONTEXT. Do not omit printed max risk/profit, breakevens or entry bands.
+    net_price_context distinguishes actual entry from target, illustration or mark.
+    A reference credit in a payoff example is not a guaranteed fill. Preserve all
+    target/minimum/skip credits and entry-credit ranges as reported_terms with
+    label, literal raw text, and their own page source. Never pick a range midpoint.
+    max_loss_unit is quoted_points only if that meaning is clear; otherwise
+    not_stated. Never multiply a printed option figure by 100 in extraction.
+14. PRICE ZONES. Preserve price invalidation ranges in band_low/band_high, with
+    instrument and kind price_level. Leave level, op and sessions null unless
+    explicitly stated. "Reclaim" does not by itself mean a daily closing price.
+    A stated risk condition is not automatically an instruction to exit at first touch.
+15. SETUP STATE. A historical trigger that never hit may be superseded or watch_only
+    when Crown describes a different next setup or says no direct trade. Set
+    setup_state accordingly; never treat the obsolete trigger as an active order.
+    status is a historical position description, not permission for us to enter.
+16. RATIO UNITS. Portfolio percentages and hedge notional weights are
+    ratio_kind notional_weight, never share/contract counts. If not explicit,
+    ratio is null and ratio_kind not_stated. An ETF mentioned in commentary is not
+    an instrument alternative unless Crown actually offers it as an expression.
+17. CHART IDENTITY. Transcribe chart and table levels on their OWN labeled
+    instrument. Never multiply an ETF level into an index level, even if it looks
+    like a 10:1 mapping. Keep independently stated observations and source pages;
+    flag disagreements between charts/tables. Do not select the one you prefer.
+18. GLYPHS. Zoom your attention to the actual conviction row. Transcribe exactly
+    the printed glyph count; never add an empty dot to make five. If uncertain,
+    use null dots and a review flag rather than completing the scale from habit.
+19. REPORTED TERMS. Capture the printed entry, price/premium bands, stops, targets,
+    risk, sizing and management terms for EVERY position, including ordinary open
+    holdings. Short literal snippets only; do not copy whole paragraphs or calculate
+    missing values. Preserve underlying price versus option premium distinctions.
 
 The letter format drifts. Older issues use Featured Trade(s) / Tactical Summary /
 Previous Week Trade Review; newer ones use New Trade Setups / Open Trades / Closed
@@ -118,6 +153,7 @@ def _request_fingerprint(cfg: Config, *, instructions: str | None = None) -> str
         "schema": LetterExtraction.model_json_schema(),
         "model": cfg.llm.extract_model, "reasoning": cfg.llm.extract_reasoning_effort,
         "max_output_tokens": cfg.llm.extract_max_output_tokens,
+        "pdf_detail": cfg.llm.extract_pdf_detail,
     }
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
 
@@ -181,6 +217,7 @@ def extract_letter(
             "content": [
                 {
                     "type": "input_file",
+                    "detail": cfg.llm.extract_pdf_detail,
                     "filename": pdf_path.name,
                     "file_data": "data:application/pdf;base64,"
                                  + base64.standard_b64encode(pdf_bytes).decode("ascii"),
@@ -228,7 +265,9 @@ def extract_letter(
         _archive(out.read_text(encoding="utf-8"), history)
     content = record.model_dump_json(indent=2)
     _archive(content, history)
-    out.write_text(content, encoding="utf-8")
+    temporary = out.with_suffix(".tmp")
+    temporary.write_text(content, encoding="utf-8")
+    temporary.replace(out)
     return record
 
 

@@ -85,7 +85,8 @@ llm:
   extract_model: "gpt-5"          # vision extraction of image-only letter PDFs
   extract_reasoning_effort: "medium"
   extract_max_output_tokens: 32000
-  extractor_version: "v3.0"       # bump when the prompt or schema changes; cache is keyed on it
+  extract_pdf_detail: "high"      # dense scanned pages need explicit visual detail
+  extractor_version: "v3.1"       # ranges, quote context, setup state, page coverage
 
 # What the ACCOUNT can actually do (docs/02-constraints.md). Filled in from
 # `crown probe` output against the real account — never assumed. Until then,

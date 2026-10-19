@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Source(BaseModel):
@@ -32,6 +32,8 @@ class InvalidationCondition(BaseModel):
     instrument: str | None
     op: Literal["close_above", "close_below", "trade_above", "trade_below"] | None
     level: float | None
+    band_low: float | None
+    band_high: float | None
     sessions: int | None
     event_ref: str | None
     text: str
@@ -73,6 +75,7 @@ class Leg(BaseModel):
     strike: float | None
     expiry: str | None
     ratio: float | None
+    ratio_kind: Literal["contracts", "shares", "notional_weight", "not_stated"]
 
 
 class Structure(BaseModel):
@@ -84,7 +87,9 @@ class Structure(BaseModel):
     legs: list[Leg]
     net_price: float | None
     net_price_kind: Literal["debit", "credit", "price", "spread_level", "unknown"]
+    net_price_context: Literal["entry", "target", "illustration", "mark", "not_stated"]
     max_loss_per_unit: float | None
+    max_loss_unit: Literal["quoted_points", "contract_currency", "not_stated"]
     max_gain_per_unit: float | None
     breakeven_low: float | None
     breakeven_high: float | None
@@ -114,10 +119,18 @@ class Target(BaseModel):
     action: str | None
 
 
+class ReportedTerm(BaseModel):
+    """Literal terms preserve ranges/contexts that cannot fit a scalar field."""
+    label: str
+    raw: str
+    source: Source
+
+
 class CrownPosition(BaseModel):
     position_key: str
     thesis_key: str
     status: Literal["entered", "conditional", "closed"]
+    setup_state: Literal["active", "watch_only", "superseded", "closed", "unclear"]
     instrument: Instrument
     structure: Structure
     view: Literal["bullish", "bearish", "neutral_range", "relative_value", "hedge"]
@@ -128,6 +141,7 @@ class CrownPosition(BaseModel):
     event_dependency: str | None
     management_notes: str | None
     hedges_position_keys: list[str]
+    reported_terms: list[ReportedTerm]
     source: Source
 
 
@@ -174,6 +188,13 @@ class ReviewFlag(BaseModel):
     reason: str
 
 
+class PageCoverage(BaseModel):
+    page: int
+    sections: list[str]
+    position_keys: list[str]
+    notes: str | None
+
+
 class LetterExtraction(BaseModel):
     letter_date: str
     is_mid_cycle: bool
@@ -185,6 +206,7 @@ class LetterExtraction(BaseModel):
     events: list[Event]
     house_view: list[HouseView]
     review_flags: list[ReviewFlag]
+    page_coverage: list[PageCoverage]
 
 
 class ExtractionRecord(BaseModel):
@@ -200,3 +222,4 @@ class ExtractionRecord(BaseModel):
     extraction: LetterExtraction
     requested_model: str | None = None
     request_fingerprint: str | None = None
+    corrections: list[dict] = Field(default_factory=list)  # code-owned, never LLM output

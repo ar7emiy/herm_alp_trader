@@ -46,6 +46,16 @@ Critical omissions/misreadings and incorrect assumptions in the inherited worked
 are recorded privately; the examples above are historical handoff context. Do not bulk
 extract or treat the old fixture as gold until extraction corrections pass review.
 
+Current result: v3.1 extractions for June 1, June 22 and October 19 have been visually
+reviewed across all pages, corrected with explicit source provenance, and checked against
+32 recorded critical facts. The offline results preview contains 19 position/setup rows
+(including a separate contingent addition), plus lifecycle updates and macro theses.
+The raw extractions are preserved and still have errors; no claim of full-field accuracy,
+automatic parsing readiness or profitable backtesting follows from the corrected sample.
+Four recorded API extraction attempts cost an estimated $0.80 at verified GPT-5 rates.
+The remaining 17 letters are not extracted in the current version. Reliable automated
+verification, complete inventory, reference coverage and subsequent phase gates remain due.
+
 ## Architecture and boundaries
 
 ```mermaid

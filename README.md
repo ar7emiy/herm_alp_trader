@@ -64,10 +64,19 @@ Crown letters/source PDFs, credentials, and runtime data stay local and are giti
 The project requires separately supplied private letters; none are distributed with it.
 
 Phase 0 status: Alpaca paper and OpenAI read-only checks work; Robinhood is optional and
-its OAuth connection can wait. The first real letter extraction failed page review, so
-bulk processing and paper execution remain gated. `crown audit <pdf>` writes a private
-report of preliminary checks and page-review findings; it never approves a trading plan.
-The old v1 fixture/compiler remain superseded and are not validated trade inputs.
+its OAuth connection can wait. Three letters now have page-reviewed, source-corrected
+extractions with 32 passing critical checks. Raw model output still needs correction;
+this is not unattended extraction accuracy or paper readiness. The remaining 17 letters,
+reference-data decisions and later engine gates are outstanding. The old v1 compiler and
+fixture remain superseded and are not validated trade inputs.
+
+Run `crown preview` to generate `data/reports/phase0-results.html`, a private offline
+report of real extracted theses, account constraints, risk budgets, source corrections
+and unresolved exits. Open the file locally; it is not a deployed trading website.
+`crown audit <pdf>` records preliminary checks and private page findings; it never approves
+a plan. Neither command loads credentials or calls a provider. Source corrections are
+recorded with `crown correct`; original attempts remain archived. None of these reports
+or private inputs belong in git.
 
 ## Decision log
 

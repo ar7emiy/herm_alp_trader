@@ -145,7 +145,7 @@ def build_report(cfg: Config) -> str:
     sub_needed = {k: needs_substitution(p) for k, p in unique.items()}
     n_sub = sum(1 for v in sub_needed.values() if v)
     lines += [f"## Unique positions (heuristic: instrument + structure + view): {len(unique)}", "",
-              f"- Expressible as written in a cash account on Alpaca (before sizing): "
+              f"- No structural exclusion in this screen (account/data/sizing unverified): "
               f"{_pct(len(unique) - n_sub, len(unique))}",
               f"- Need substitution or skip: {_pct(n_sub, len(unique))}", "",
               "| First seen | Instrument | Alternatives | Structure | View | Why it can't be held as written |",

@@ -26,12 +26,22 @@ class AuditIssue(BaseModel):
     detail: str
 
 
+class ReviewCheck(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str
+    passed: bool
+    critical: bool = True
+    detail: str
+    source_pages: list[int]
+
+
 class PageReview(BaseModel):
     model_config = ConfigDict(extra="forbid")
     extraction_sha256: str
     reviewer: str = Field(min_length=1)
     pages_reviewed: list[int]
     issues: list[AuditIssue]
+    checks: list[ReviewCheck] = Field(default_factory=list)
 
 
 class ExtractionAudit(BaseModel):
@@ -43,6 +53,7 @@ class ExtractionAudit(BaseModel):
     # A later phase must implement approval; absence of an issue is not approval.
     planning_status: Literal["blocked", "manual_review_required"]
     page_review: PageReview | None
+    transcription_status: Literal["not_reviewed", "needs_correction", "critical_checks_passed"]
     issues: list[AuditIssue]
 
 
@@ -89,9 +100,15 @@ def audit_record(record: ExtractionRecord, page_count: int,
 
     x = record.extraction
     walk(x.model_dump())
+    covered = [p.page for p in x.page_coverage]
+    if len(covered) != len(set(covered)) or set(covered) != set(range(1, page_count + 1)):
+        add("page_coverage", "page_coverage", "Each PDF page must be accounted for exactly once")
     check_date(x.letter_date, "letter_date")
     thesis_keys = [t.thesis_key for t in x.theses]
     position_keys = [p.position_key for p in x.crown_positions]
+    for coverage in x.page_coverage:
+        if any(key not in position_keys for key in coverage.position_keys):
+            add("coverage_reference", "page_coverage", "Page coverage refers to an absent position")
     for field, keys in (("theses", thesis_keys), ("crown_positions", position_keys)):
         for key, count in Counter(keys).items():
             if not key.strip() or count > 1:
@@ -112,6 +129,9 @@ def audit_record(record: ExtractionRecord, page_count: int,
                     add("conviction_scale", f"{path}.conviction",
                         "Printed conviction scale needs page review", "review")
         for j, condition in enumerate(thesis.invalidation):
+            low, high = condition.band_low, condition.band_high
+            if (low is None) != (high is None) or (low is not None and low > high):
+                add("invalidation_band", f"{path}.invalidation[{j}]", "Invalidation range is incomplete or reversed")
             if condition.kind == "price_level" and (
                 condition.instrument is None or condition.op is None or condition.level is None
             ):
@@ -127,6 +147,9 @@ def audit_record(record: ExtractionRecord, page_count: int,
                 add("unknown_hedge", f"{path}.hedges_position_keys", "Invalid hedge relationship")
         if p.status == "entered" and not p.entry.triggered:
             add("entry_status", f"{path}.entry", "Entered position is marked untriggered")
+        if p.setup_state in ("watch_only", "superseded", "unclear"):
+            add("setup_not_actionable", f"{path}.setup_state",
+                "This setup is not an active entry instruction", "review")
         check_date(p.entry.window_close, f"{path}.entry.window_close")
         low, high = p.entry.band_low, p.entry.band_high
         if (low is None) != (high is None) or (low is not None and low > high):
@@ -147,10 +170,14 @@ def audit_record(record: ExtractionRecord, page_count: int,
             check_date(leg.expiry, f"{field}.expiry")
             if leg.ratio is not None and leg.ratio <= 0:
                 add("leg_ratio", f"{field}.ratio", "Leg ratio must be positive")
-            if leg.right in ("call", "put") and (
-                leg.strike is None or leg.strike <= 0 or leg.expiry is None
-            ):
-                add("option_leg", field, "Option leg needs a positive strike and an expiry")
+            if leg.ratio is not None and leg.ratio_kind in ("notional_weight", "not_stated"):
+                add("ratio_units_unverified", field, "Weight/unknown units cannot be used as executable leg quantities", "review")
+            if leg.right in ("call", "put"):
+                if leg.strike is not None and leg.strike <= 0:
+                    add("option_leg", field, "Option strike must be positive")
+                if leg.strike is None or leg.expiry is None:
+                    add("option_leg_incomplete", field,
+                        "Missing strike/expiry blocks implementation; preserve unstated values as null", "review")
 
     levels = defaultdict(set)
     for level in x.levels:
@@ -171,12 +198,28 @@ def audit_record(record: ExtractionRecord, page_count: int,
         if set(pages) != set(range(1, page_count + 1)):
             add("review_incomplete", "page_review.pages_reviewed", "Some PDF pages have not been reviewed", "review")
         issues.extend(review.issues)
+        for check in review.checks:
+            if not check.passed:
+                add("page_check_failed", check.name, check.detail)
+            if not check.source_pages or any(not 1 <= p <= page_count for p in check.source_pages):
+                add("page_check_source", check.name, "Page check requires valid source pages")
+    transcription_status = "not_reviewed"
+    if review is not None:
+        transcription_status = "needs_correction"
+        if (
+            set(review.pages_reviewed) == set(range(1, page_count + 1))
+            and review.checks and all(c.passed for c in review.checks)
+            and any(c.critical for c in review.checks)
+            and not any(i.severity == "error" for i in issues)
+        ):
+            transcription_status = "critical_checks_passed"
     return ExtractionAudit(
         pdf_name=record.pdf_name, pdf_sha256=record.pdf_sha256,
         extraction_sha256=digest, page_count=page_count,
         audited_at=datetime.now(timezone.utc).isoformat(),
         planning_status="blocked" if issues else "manual_review_required",
         page_review=review, issues=issues,
+        transcription_status=transcription_status,
     )
 
 

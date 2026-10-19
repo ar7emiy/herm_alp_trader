@@ -151,6 +151,34 @@ def audit(pdf_path: Path, review_file: Path | None):
         raise click.ClickException("Unresolved audit findings; extraction remains unapproved")
 
 
+@cli.command("preview")
+@_friendly
+def preview():
+    """Generate a private HTML report from cached letters and audits, offline."""
+    from crown.letter.preview import write_preview
+
+    path = write_preview(load_config(load_env=False))
+    click.echo(f"Private results: {path}")
+    click.echo("Research preview only; no orders or approved allocations")
+
+
+@cli.command("correct")
+@click.argument("pdf_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--correction-file", required=True, type=click.Path(exists=True, path_type=Path))
+@_friendly
+def correct(pdf_path: Path, correction_file: Path):
+    """Apply private source corrections; preserve the original attempt and provenance."""
+    from crown.letter.correct import CorrectionBatch, apply_corrections
+
+    try:
+        batch = CorrectionBatch.model_validate_json(correction_file.read_text(encoding="utf-8"))
+        record = apply_corrections(pdf_path, batch, load_config(load_env=False))
+    except ValueError:
+        raise click.ClickException("Invalid correction, source, or extraction mismatch; nothing changed") from None
+    click.echo(f"Recorded {len(batch.changes)} source corrections; batches={len(record.corrections)}")
+    click.echo("Prior page reviews no longer match this revision; re-audit required. No approval granted.")
+
+
 @cli.command("probe")
 @_friendly
 def probe():

@@ -150,6 +150,19 @@ It does not validate ticker identity, complete option payoff arithmetic, transcr
 accuracy, or eligibility. A clean report still requires page review and grants no approval.
 Private page reviews bind to the exact extraction hash; superseded attempts are archived.
 
+Extractor v3.1 sends scanned PDFs with explicit `detail: high` and records every page in
+`page_coverage`. Price zones have separate bounds; option figures retain quote context and
+raw units; leg ratios distinguish notional weights from quantities. `setup_state` keeps
+watch-only/superseded ideas separate from active setups. `reported_terms` preserves printed
+ranges and conditions with independent sources when a scalar cannot represent them.
+
+`crown correct <pdf> --correction-file <private.json>` applies source-review edits only
+to extraction data. Every edit supplies a JSON pointer, expected previous value, new value,
+source page/quote and reason; the batch binds to the exact prior record hash. Both original
+and corrected records remain archived, and old audits no longer apply. The reviewer identity
+is explicit: a Codex visual review is not described as owner approval or a human audit.
+These corrections do not demonstrate unattended extraction accuracy or grant trading permission.
+
 ## Cross-letter linking
 
 Positions persist across letters; the model must too.

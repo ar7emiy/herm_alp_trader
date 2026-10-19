@@ -117,6 +117,11 @@ class LLMConfig:
     extract_reasoning_effort: str | None  # null for non-reasoning models
     extract_max_output_tokens: int
     extractor_version: str
+    extract_pdf_detail: str = "high"
+
+    def __post_init__(self):
+        if self.extract_pdf_detail not in {"low", "high", "auto"}:
+            raise ValueError("llm.extract_pdf_detail must be low, high, or auto")
 
 
 @dataclass(frozen=True)
