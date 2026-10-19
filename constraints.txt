@@ -1,0 +1,15 @@
+# Direct dependency versions used by the checked Phase 0 environment.
+# Transitive dependencies are not locked by this file.
+openai==3.24.0
+pypdf==6.19.0
+alpaca-py==0.43.5
+pydantic==2.13.4
+pyyaml==6.0.3
+pandas==3.0.3
+pyarrow==25.0.0
+python-dotenv==1.2.2
+click==8.4.2
+pandas-market-calendars==5.4.0
+pytest==9.1.1
+pytest-cov==7.1.0
+anthropic==0.117.0

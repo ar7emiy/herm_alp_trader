@@ -14,7 +14,7 @@ from crown.engine.zonecheck import (
 )
 from crown.models import EntryZone, PlannedSize, PlannedTarget, PlannedTrade, Position, StopState
 
-CFG = load_config()
+CFG = load_config(load_env=False)
 
 
 def make_trade(**overrides) -> PlannedTrade:

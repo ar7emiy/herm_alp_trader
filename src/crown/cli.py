@@ -50,10 +50,14 @@ def llm_check():
     from openai import OpenAI
 
     from crown.config import openai_api_key
+    from crown.diagnostics import error_label, safe_error
 
     cfg = load_config()
     client = OpenAI(api_key=openai_api_key())
-    ids = sorted(m.id for m in client.models.list())
+    try:
+        ids = sorted(m.id for m in client.models.list())
+    except Exception as exc:
+        raise RuntimeError(f"OpenAI model access failed: {error_label(safe_error(exc))}") from None
     chat_like = [i for i in ids if i.startswith(("gpt-", "o1", "o3", "o4", "o5"))]
     click.echo(f"{len(ids)} models visible; GPT/o-series ({len(chat_like)}):")
     for i in chat_like:
@@ -63,9 +67,12 @@ def llm_check():
     if model not in ids:
         raise click.ClickException(
             f"config.yaml llm.extract_model '{model}' is not available to this key — pick one above")
-    resp = client.responses.create(model=model, input="Reply with the single word: ok",
-                                   max_output_tokens=256)
-    click.echo(f"Ping {model}: status={resp.status} output={resp.output_text!r}")
+    try:
+        resp = client.responses.create(model=model, input="Reply with the single word: ok",
+                                       max_output_tokens=1024, store=False)
+    except Exception as exc:
+        raise RuntimeError(f"OpenAI request failed: {error_label(safe_error(exc))}") from None
+    click.echo(f"Ping {model}: status={resp.status}")
 
 
 @cli.command("extract")
@@ -77,6 +84,7 @@ def extract(pdf_path: Path | None, all_letters: bool, force: bool):
     """Vision-extract letter(s) into the doc 03 model. Cached per extractor
     version; costs one OpenAI call per uncached letter."""
     from crown.letter.extract import cache_path, extract_letter, letter_pdfs
+    from crown.diagnostics import error_label, safe_error
 
     cfg = load_config()
     if all_letters == bool(pdf_path):
@@ -90,8 +98,9 @@ def extract(pdf_path: Path | None, all_letters: bool, force: bool):
         try:
             rec = extract_letter(pdf, cfg=cfg, force=force)
         except Exception as e:  # noqa: BLE001 — keep going; report every failure at the end
-            failures.append((pdf.name, f"{type(e).__name__}: {e}"))
-            click.echo(f"  FAILED: {type(e).__name__}: {e}")
+            reason = error_label(safe_error(e))
+            failures.append((pdf.name, reason))
+            click.echo(f"  FAILED: {reason}")
             continue
         x = rec.extraction
         u = rec.usage or {}
@@ -116,8 +125,8 @@ def inventory():
 @cli.command("probe")
 @_friendly
 def probe():
-    """Read-only Alpaca probe: account type, options level, fractionable
-    symbols, options data history, data feeds. Places no orders."""
+    """GET-only PAPER probe: account observations, assets, data feeds, and
+    news. Does not certify settled cash or order support. Places no orders."""
     from crown.probe import run_probe, summarize, write_probe
 
     cfg = load_config()

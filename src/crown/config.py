@@ -1,6 +1,6 @@
-"""Loads config.yaml and .env. Nothing here should be inferred by the model —
-see 06-sizing-and-alternatives.md: "Set this in config explicitly. Do not let
-the agent guess."
+"""Load explicit configuration and optional local credentials.
+
+See docs/05-portfolio-and-risk.md. Offline tooling must use load_env=False.
 """
 from __future__ import annotations
 
@@ -143,8 +143,10 @@ class Config:
     capabilities: CapabilitiesConfig
 
 
-def load_config(path: str | Path | None = None) -> Config:
-    load_dotenv(REPO_ROOT / ".env")
+def load_config(path: str | Path | None = None, *, load_env: bool = True) -> Config:
+    """Read configuration; offline tools/tests can explicitly avoid credential files."""
+    if load_env:
+        load_dotenv(REPO_ROOT / ".env")
 
     config_path = Path(path) if path else REPO_ROOT / "config.yaml"
     raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))

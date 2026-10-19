@@ -9,9 +9,17 @@
 Build in phases; each has an exit criterion. Do not skip ahead to live trading. Backtest
 and live share one engine, so most phases are built and proven offline first.
 
-## Phase 0 — Inventory and verification
+## Phase 0 - Inventory and verification
 
 Replace assumptions with numbers before designing further.
+
+Implementation progress, 2026-10-19: the paper-only GET probe now handles removed API
+fields, records quote ages and news access, and keeps broker observations separate from
+cash-only policy. Diagnostic errors omit provider messages that could echo a credential.
+Offline tests explicitly prohibit credential-file loading. CI runs those tests and a
+tracked-private-path check with the tested direct versions in `constraints.txt`.
+Credentialed probe results stay under ignored `data/probe/`; capabilities remain
+unverified until the remaining checks below are complete.
 
 - [ ] **Letter inventory.** Extract all letters in `crown_letters/` (OpenAI vision, doc 03
       schema, first pass may be rough) and produce a table:

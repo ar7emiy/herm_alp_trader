@@ -66,7 +66,7 @@ PDF has a text layer.
 ```
 python -m venv .venv
 .venv/Scripts/activate        # Windows; source .venv/bin/activate on Linux/macOS
-pip install -e ".[dev,legacy]"
+pip install -c constraints.txt -e ".[dev,legacy]"
 cp .env.example .env          # OPENAI_API_KEY, Alpaca PAPER keys, ALPACA_PAPER=true
 pytest
 ```
@@ -93,7 +93,13 @@ Read `docs/13-completion-plan.md` and `docs/14-robinhood-and-data.md` after docs
 They specify the user's current priority: autonomous paper within an owner-set policy,
 plus a private dashboard; exhaustive historical backtesting is optional. Phase 0 still
 comes first, and no live adapters are built before the preceding phase gates. The
-prototype suite has 57 passing tests as of 2026-10-19; this is not paper readiness.
+suite has 64 passing tests after Phase 0 probe hardening on 2026-10-19; this is not paper readiness.
 Robinhood is researched but unconnected and is intended as a read-tool-allowlisted
 research source. Alpaca remains the execution broker. Keep source PDFs, extracts,
 credentials, and runtime account data out of git.
+
+Credentials may be loaded by the application for authorized API checks; never open or
+display `.env` in assistant output. Offline tooling/tests use `load_config(load_env=False)`.
+The probe is paper-only and never verifies settled cash, legal account type, order
+acceptance, or live capabilities from account/asset flags. `constraints.txt` records the
+tested direct dependency versions; CI runs offline tests and checks tracked private paths.
