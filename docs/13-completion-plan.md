@@ -32,11 +32,19 @@ itself, enable live trading, expand its universe, or relax its limits.
   cash ledger, complete portfolio risk controls, or enforceable stop ratchet.
 - The extractor stores a PDF hash but does not check it before returning cached content.
   Position linking is heuristic; source/number validation is incomplete.
-- Some inherited docs/glossary text has damaged symbols. Repair against source material
-  before using that text as extraction instructions.
+- Symbol rendering was suspected to be damaged at handoff. UTF-8 inspection subsequently
+  found no control/replacement-character corruption in the glossary; do not rewrite it
+  based on PowerShell display encoding alone.
 - No provider credentials were tested and no orders were sent during this handoff.
 
 Passing the prototype suite does not establish paper readiness.
+
+Subsequent Phase 0 evidence: OpenAI and read-only Alpaca paper checks succeeded. Robinhood
+OAuth remains incomplete and is optional for work Alpaca can support. The first letter
+extraction cost an estimated $0.175 at published GPT-5 token rates and failed its page audit.
+Critical omissions/misreadings and incorrect assumptions in the inherited worked examples
+are recorded privately; the examples above are historical handoff context. Do not bulk
+extract or treat the old fixture as gold until extraction corrections pass review.
 
 ## Architecture and boundaries
 
@@ -102,8 +110,8 @@ a cost decision before adding paid data or high-frequency model calls.
    account restrictions, and activity/settlement reporting. Do not treat buying power or
    raw cash as settled cash. Paper observations cannot certify live capabilities.
 3. Pin compatible dependency versions and model configuration. Check one OpenAI request,
-   then extract and hand-verify June 22 plus two different layouts. Fix corrupt glossary
-   symbols, validate critical numbers, then inventory the remaining local letters in
+   then extract and hand-verify June 22 plus two different layouts. Verify glossary
+   symbols against the source, validate critical numbers, then inventory the remaining local letters in
    bounded batches with token/cost reporting. Do not send the whole library on retries.
 4. Prototype the Robinhood read-only connection described in doc 14. Record actual tool
    availability and data limitations. Failure to connect need not block instruments that

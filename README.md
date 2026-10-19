@@ -63,6 +63,12 @@ and forward paper evidence are required. No paper or live orders are enabled by 
 Crown letters/source PDFs, credentials, and runtime data stay local and are gitignored.
 The project requires separately supplied private letters; none are distributed with it.
 
+Phase 0 status: Alpaca paper and OpenAI read-only checks work; Robinhood is optional and
+its OAuth connection can wait. The first real letter extraction failed page review, so
+bulk processing and paper execution remain gated. `crown audit <pdf>` writes a private
+report of preliminary checks and page-review findings; it never approves a trading plan.
+The old v1 fixture/compiler remain superseded and are not validated trade inputs.
+
 ## Decision log
 
 | # | Decision | Status |

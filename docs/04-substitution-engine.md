@@ -99,7 +99,7 @@ chosen expression needs them in its own price terms for broker-side orders.
 | Inverse | move in reference → opposite move in candidate, scaled by leverage | SPX stop 7600 (above) → SH stop below current SH price |
 | Reciprocal (FX) | `FXY ∝ 1 / USDJPY` | USDJPY 157.50 → FXY level via current ratio |
 | Correlated proxy | beta-scaled move from current prices, with a widened tolerance | MU level → SMH level (low confidence) |
-| Option | monitor the **underlying** level; the option's own price is not the trigger | GLD reclaim 391.5 → exit the put |
+| Option | monitor the **underlying** condition; the option's own price is not the trigger | A reclaim zone requires an approved comparison convention; never invent its midpoint |
 
 Rules: thesis invalidation is always evaluated on the reference instrument when data
 exists (signal space). Translated levels drive broker-side protective orders (execution
@@ -112,14 +112,17 @@ confidence.
 {
   "crown_position_id": "...",
   "exposure_profile": {"reference": "GLD", "direction": "short", "shape": "capped_directional", ...},
-  "chosen": {"symbol": "GLD", "structure": "debit_put_spread", "legs": [...], "score": 0.82,
+  "chosen": null,
+  "planning_status": "held",
+  "proposal": {"symbol": "GLD", "structure": "debit_put_spread", "legs": [...], "score": 0.82,
              "preserved": ["direction", "defined risk", "expiry"],
              "lost": ["strike width narrowed 10→5"]},
   "rejected": [
     {"candidate": "GLL (−2x gold)", "reason": "leveraged inverse; thesis horizon exceeds max hold"},
-    {"candidate": "GLD 385/375 as written", "reason": "max loss $700/unit > $56 budget"}
+    {"candidate": "GLD 385/375 as written", "reason": "$3 debit × verified 100 multiplier = $300 premium at risk before fees; exceeds budget"}
   ],
-  "level_translation": [{"from": "GLD 391.5 close_above", "to": "GLD 391.5", "method": "identity"}],
+  "level_translation": [],
+  "unresolved": ["Crown reclaim zone has no stated close/trade comparison; plan held pending approved interpretation"],
   "deviation_tier": 1
 }
 ```
@@ -133,9 +136,9 @@ This record is the backbone of the "why" in every memo and report (doc 08).
   allowed: a small long iron butterfly centered in Crown's band is eligible but flagged
   "narrower profit zone, different vol bet". If not: **skip**. A directional MU or SMH
   trade is *not* eligible — Crown's bet was "MU stays in a range," not a direction.
-- **USDJPY conditional short (June 22)** — reference USDJPY, direction short. Candidate:
-  long FXY with reciprocal level translation. Only becomes live if USDJPY trades 157.50
-  while the window is open (signal space), then entered in FXY (execution space).
+- **USDJPY discussion (June 22)** — the original short was not taken and the next setup
+  changed. Do not revive the old trigger. FXY is only a potential wrapper for a separately
+  valid directional short setup with verified reference data and an approved plan.
 - **Copper "HG / CPER" long** — Crown names CPER; exact-wrapper candidate, identity-ish
   translation via ratio, tier 0/1.
 - **SPX bear call spread** — shape is one-sided `range_short_vol`. SH (−1x) matches

@@ -1,10 +1,11 @@
-"""The exact regression suite from 03-build-plan.md's Phase 3 exit
-criteria: "Feed it the June 22 issue. A correct run must: ..."
+"""Legacy v1 compiler behavior tests, not extraction-accuracy evidence.
 
-Uses tests/fixtures/june22_parsed_letter.json — a hand-built ParsedLetter
-matching the worked example in 05-letter-schema.md exactly (this is what
-parse_letter() should produce from the real PDF; parse_letter itself needs
-an Anthropic API key and isn't exercised here — this suite covers the
+The hand-built fixture is incomplete and its quoted option-risk units and
+inferred stop midpoint are unsafe assumptions identified during Phase 0 page
+review. Preserve these tests only as migration context; replace this compiler
+and fixture in Phase 1. They must not certify a gold set or paper readiness.
+
+parse_letter itself needs an Anthropic API key and isn't exercised here; this covers the
 deterministic half of the pipeline, build_plan + the zone-check engine,
 which is everything that can be verified without live API access).
 """

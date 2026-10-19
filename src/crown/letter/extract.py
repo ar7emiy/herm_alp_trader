@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -109,11 +110,41 @@ def cache_path(cfg: Config, pdf_path: Path) -> Path:
     return cfg.paths.extracted_letters / f"{pdf_path.stem}.{cfg.llm.extractor_version}.json"
 
 
+def _request_fingerprint(cfg: Config, *, instructions: str | None = None) -> str:
+    """A prompt/glossary/schema/model change is a different extraction experiment."""
+    payload = {
+        "instructions": instructions if instructions is not None else _system_prompt(),
+        "user_prompt": USER_PROMPT,
+        "schema": LetterExtraction.model_json_schema(),
+        "model": cfg.llm.extract_model, "reasoning": cfg.llm.extract_reasoning_effort,
+        "max_output_tokens": cfg.llm.extract_max_output_tokens,
+    }
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
+
+
 def load_cached(cfg: Config, pdf_path: Path) -> ExtractionRecord | None:
     path = cache_path(cfg, pdf_path)
     if not path.exists():
         return None
-    return ExtractionRecord.model_validate_json(path.read_text(encoding="utf-8"))
+    record = ExtractionRecord.model_validate_json(path.read_text(encoding="utf-8"))
+    if (
+        record.pdf_sha256 != hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+        or record.extractor_version != cfg.llm.extractor_version
+        or record.request_fingerprint != _request_fingerprint(cfg)
+    ):
+        return None
+    return record
+
+
+def _archive(content: str, directory: Path) -> None:
+    """Keep every extraction attempt, including superseded active caches."""
+    directory.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    try:
+        with (directory / f"{digest}.json").open("x", encoding="utf-8") as stream:
+            stream.write(content)
+    except FileExistsError:
+        pass  # identical content is already preserved
 
 
 def extract_letter(
@@ -135,6 +166,8 @@ def extract_letter(
 
     pdf_bytes = pdf_path.read_bytes()
     client = client or OpenAI(api_key=openai_api_key())
+    system_prompt = _system_prompt()
+    fingerprint = _request_fingerprint(cfg, instructions=system_prompt)
 
     kwargs = {}
     if cfg.llm.extract_reasoning_effort:
@@ -142,7 +175,7 @@ def extract_letter(
 
     response = client.responses.parse(
         model=cfg.llm.extract_model,
-        instructions=_system_prompt(),
+        instructions=system_prompt,
         input=[{
             "role": "user",
             "content": [
@@ -157,6 +190,7 @@ def extract_letter(
         }],
         text_format=LetterExtraction,
         max_output_tokens=cfg.llm.extract_max_output_tokens,
+        store=False,
         **kwargs,
     )
 
@@ -183,11 +217,18 @@ def extract_letter(
         extracted_at=datetime.now(timezone.utc).isoformat(),
         usage=response.usage.model_dump() if response.usage else {},
         extraction=extraction,
+        requested_model=cfg.llm.extract_model,
+        request_fingerprint=fingerprint,
     )
 
     out = cache_path(cfg, pdf_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(record.model_dump_json(indent=2), encoding="utf-8")
+    history = out.parent / "history" / out.stem
+    if out.exists():
+        _archive(out.read_text(encoding="utf-8"), history)
+    content = record.model_dump_json(indent=2)
+    _archive(content, history)
+    out.write_text(content, encoding="utf-8")
     return record
 
 

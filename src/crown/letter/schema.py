@@ -198,3 +198,5 @@ class ExtractionRecord(BaseModel):
     extracted_at: str
     usage: dict
     extraction: LetterExtraction
+    requested_model: str | None = None
+    request_fingerprint: str | None = None

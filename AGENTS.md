@@ -77,6 +77,7 @@ Phase 0 commands:
 crown llm-check               # list OpenAI models for the key; ping llm.extract_model
 crown extract <pdf> | --all   # vision-extract letters (cached; one API call per uncached letter)
 crown inventory               # data/reports/phase0-inventory.md from cached extractions
+crown audit <pdf>             # offline checks; private hash-bound page review; never approval
 crown probe                   # read-only Alpaca account/capability probe → data/probe/
 ```
 
@@ -93,10 +94,18 @@ Read `docs/13-completion-plan.md` and `docs/14-robinhood-and-data.md` after docs
 They specify the user's current priority: autonomous paper within an owner-set policy,
 plus a private dashboard; exhaustive historical backtesting is optional. Phase 0 still
 comes first, and no live adapters are built before the preceding phase gates. The
-suite has 64 passing tests after Phase 0 probe hardening on 2026-10-19; this is not paper readiness.
+suite has 71 passing tests after Phase 0 probe and audit hardening on 2026-10-19; this is not paper readiness.
 Robinhood is researched but unconnected and is intended as a read-tool-allowlisted
 research source. Alpaca remains the execution broker. Keep source PDFs, extracts,
 credentials, and runtime account data out of git.
+
+The first real extraction was visually reviewed across all 11 pages and failed critical
+accuracy checks. Findings and source images are private under `data/`. The inherited v1
+fixture is incomplete and contains unsafe unit/midpoint assumptions; it is not a gold set.
+Fix extraction before bulk API calls. Three accepted audits and the full inventory are
+still outstanding. `crown audit` implements preliminary checks only and cannot approve
+plans; all execution remains gated. Cache identity checks PDF, prompt/glossary/schema and
+model settings, and superseded extraction attempts are preserved in private history.
 
 Credentials may be loaded by the application for authorized API checks; never open or
 display `.env` in assistant output. Offline tooling/tests use `load_config(load_env=False)`.

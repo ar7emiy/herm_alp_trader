@@ -57,6 +57,10 @@ def _key(p: CrownPosition) -> tuple[str, str, str]:
 def build_report(cfg: Config) -> str:
     records, missing = load_all(cfg)
     lines: list[str] = ["# Phase 0 — Letter inventory", ""]
+    lines += ["**Unapproved research inventory.** Counts come from model extractions; "
+              "they are not verified trade inputs. Run `crown audit <pdf>` and review "
+              "every page before using the data in planning. A clean automated check "
+              "cannot certify transcription accuracy.", ""]
     if missing:
         lines += [f"**Not yet extracted ({len(missing)}):** " + ", ".join(p.name for p in missing), ""]
     if not records:

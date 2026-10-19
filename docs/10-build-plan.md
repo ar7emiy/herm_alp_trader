@@ -21,6 +21,13 @@ tracked-private-path check with the tested direct versions in `constraints.txt`.
 Credentialed probe results stay under ignored `data/probe/`; capabilities remain
 unverified until the remaining checks below are complete.
 
+The first real extraction has now been reviewed against all pages and failed critical
+accuracy checks. The older hand-built fixture is not a gold set. Cache reuse now checks
+PDF content plus prompt/glossary/schema/model settings, extraction attempts are archived,
+and `crown audit <pdf>` records offline checks and hash-bound private page findings.
+This audit grants no planning approval. Bulk extraction is deferred until the identified
+omissions, chart mapping and glyph errors are corrected; three accepted audits remain due.
+
 - [ ] **Letter inventory.** Extract all letters in `crown_letters/` (OpenAI vision, doc 03
       schema, first pass may be rough) and produce a table:
       positions per letter; by asset class and structure; how many need substitution;
@@ -129,14 +136,16 @@ round-tripped, monitors running, all logged.
 ### June 22 regression (updated expectations)
 
 A correct run on the 6/22 issue must:
-- extract the MU condor, GLD put spread, MSFT bear call, the two pairs, and the USDJPY
-  conditional into theses + positions with page references;
+- extract every position and lifecycle update on every page, not just the rows in the
+  incomplete legacy fixture, with page references;
 - flag the `●●●○` conviction as a glyph mismatch;
 - classify the MU condor as `range_short_vol` + event-dependent → no directional
   substitute is eligible; skip (or a debit butterfly only if spreads are permitted);
 - mark the MU entry window closed if run on/after Wednesday 6/24;
-- never stage the USDJPY short unless 157.50 prints in its window; if it does, the
-  candidate is long FXY with a reciprocal level translation;
-- record GLD's invalidation as a price condition (close above ~391.5) on the thesis;
+- never reactivate the old USDJPY trigger after the letter changes the setup;
+- preserve GLD's reclaim zone without inventing a midpoint, close comparison or session count;
+- keep quoted option points separate from contract dollars, using verified contract metadata;
+- preserve conflicting chart/table observations and flag them instead of silently translating
+  a SPY value into a supposedly printed SPX level;
 - not veto anything for conflicting with the house view;
 - produce a decision record for every one of the above, including skips.

@@ -11,6 +11,7 @@ import pytest
 from openai.lib._pydantic import to_strict_json_schema
 
 from crown.letter import extract as extract_mod
+from crown.letter.audit import AuditIssue, PageReview, audit_record, record_hash, write_audit
 from crown.letter.inventory import build_report, needs_substitution
 from crown.letter.schema import (
     Conviction, CrownPosition, Entry, Instrument, LetterExtraction, LifecycleUpdate,
@@ -69,6 +70,7 @@ class _FakeResponses:
         self.calls += 1
         assert kwargs["text_format"] is LetterExtraction
         assert kwargs["input"][0]["content"][0]["type"] == "input_file"
+        assert kwargs["store"] is False
         return SimpleNamespace(
             status="completed", incomplete_details=None, output=[], model="fake-model",
             output_parsed=self.parsed,
@@ -115,6 +117,118 @@ def test_extractor_raises_on_incomplete_response(letters_cfg):
 
     with pytest.raises(RuntimeError, match="incomplete"):
         extract_mod.extract_letter(pdf, cfg=cfg, client=SimpleNamespace(responses=Incomplete()))
+
+
+def test_changed_pdf_cannot_reuse_an_old_extraction(letters_cfg):
+    cfg, letters = letters_cfg
+    pdf = letters / "same-name.pdf"
+    pdf.write_bytes(b"first document")
+    fake = _FakeResponses(_letter("2026-06-22", []))
+    client = SimpleNamespace(responses=fake)
+    first = extract_mod.extract_letter(pdf, cfg=cfg, client=client)
+    pdf.write_bytes(b"corrected document")
+    assert extract_mod.load_cached(cfg, pdf) is None
+    second = extract_mod.extract_letter(pdf, cfg=cfg, client=client)
+    assert first.pdf_sha256 != second.pdf_sha256 and fake.calls == 2
+    history = extract_mod.cache_path(cfg, pdf).parent / "history"
+    archived = [p.read_text(encoding="utf-8") for p in history.rglob("*.json")]
+    assert len(archived) == 2
+    assert all(any(r.pdf_sha256 in content for content in archived) for r in (first, second))
+
+
+def test_changed_model_or_glossary_invalidates_cache(letters_cfg, monkeypatch):
+    cfg, letters = letters_cfg
+    pdf = letters / "letter.pdf"
+    pdf.write_bytes(b"same document")
+    client = SimpleNamespace(responses=_FakeResponses(_letter("2026-06-22", [])))
+    extract_mod.extract_letter(pdf, cfg=cfg, client=client)
+    changed = dataclasses.replace(cfg, llm=dataclasses.replace(cfg.llm, extract_model="different-model"))
+    assert extract_mod.load_cached(changed, pdf) is None
+    monkeypatch.setattr(extract_mod, "_system_prompt", lambda: "corrected glossary")
+    assert extract_mod.load_cached(cfg, pdf) is None
+
+
+def _record_for_audit(letters_cfg):
+    cfg, letters = letters_cfg
+    pdf = letters / "synthetic.pdf"
+    pdf.write_bytes(b"%PDF synthetic")
+    client = SimpleNamespace(responses=_FakeResponses(
+        _letter("2026-06-22", [_position("p1", "XYZ", "long", "bullish")])
+    ))
+    return extract_mod.extract_letter(pdf, cfg=cfg, client=client,
+                                      received_at="2026-06-22T14:00:00Z")
+
+
+def test_clean_structured_output_never_certifies_page_accuracy_or_approves(letters_cfg):
+    report = audit_record(_record_for_audit(letters_cfg), page_count=1)
+    assert report.issues == []
+    assert report.planning_status == "manual_review_required"
+
+
+def test_audit_blocks_broken_provenance_link_and_fabricated_glyph_count(letters_cfg):
+    record = _record_for_audit(letters_cfg)
+    record.extraction.crown_positions[0].thesis_key = "nonexistent"
+    record.extraction.crown_positions[0].source = Source(page=2, quote="")
+    record.extraction.theses[0].conviction = Conviction(dots=5, raw="●●●○", flag="ok")
+    report = audit_record(record, page_count=1)
+    assert report.planning_status == "blocked"
+    assert {i.code for i in report.issues} >= {
+        "unknown_thesis", "source_page", "source_quote", "conviction_inconsistent",
+    }
+
+
+def test_audit_never_treats_raw_option_risk_as_contract_dollars(letters_cfg):
+    record = _record_for_audit(letters_cfg)
+    p = record.extraction.crown_positions[0]
+    p.instrument.asset_class = "option_on_equity"
+    p.structure.max_loss_per_unit = 4.25  # unknown quote/contract units
+    report = audit_record(record, page_count=1)
+    assert any(i.code == "option_units_unverified" for i in report.issues)
+    assert p.structure.max_loss_per_unit == 4.25, "audit must preserve literal source data"
+    assert report.planning_status == "blocked"
+
+
+def test_manual_page_review_is_bound_to_exact_attempt_and_preserved(letters_cfg):
+    record = _record_for_audit(letters_cfg)
+    review = PageReview(
+        extraction_sha256=record_hash(record), reviewer="synthetic-test-reviewer",
+        pages_reviewed=[1], issues=[AuditIssue(
+            severity="error", code="misread_strike", field="crown_positions[0]",
+            detail="Synthetic page review found a critical number error",
+        )],
+    )
+    report = audit_record(record, 1, review)
+    assert report.planning_status == "blocked"
+    assert report.page_review is not None
+    path = write_audit(report, letters_cfg[0].paths.reports)
+    assert "misread_strike" in path.read_text(encoding="utf-8")
+    record.extracted_at = "2026-06-22T15:00:00Z"
+    with pytest.raises(ValueError, match="different extraction"):
+        audit_record(record, 1, review)
+
+
+def test_audit_cli_reads_no_credentials_and_reports_unapproved(letters_cfg, monkeypatch):
+    from click.testing import CliRunner
+    from pypdf import PdfWriter
+    from crown.cli import cli
+
+    cfg, letters = letters_cfg
+    pdf = letters / "synthetic.pdf"
+    writer = PdfWriter()
+    writer.add_blank_page(width=100, height=100)
+    writer.write(pdf)
+    client = SimpleNamespace(responses=_FakeResponses(_letter("2026-06-22", [])))
+    extract_mod.extract_letter(pdf, cfg=cfg, client=client)
+
+    def offline_config(*, load_env=True):
+        assert load_env is False
+        return cfg
+
+    monkeypatch.setattr("crown.cli.load_config", offline_config)
+    result = CliRunner().invoke(cli, ["audit", str(pdf)])
+    assert result.exit_code == 1
+    assert "blocked" in result.output and "unapproved" in result.output
+    assert list((cfg.paths.reports / "audits").glob("*.json"))
 
 
 def test_inventory_counts_gaps_and_silent_drops(letters_cfg):

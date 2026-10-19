@@ -129,6 +129,11 @@ carries `source: {page, quote}` — the page number and a short verbatim transcr
   condition that would make Crown wrong, typed as price / event / narrative. If none is
   stated, leave it empty — doc 05 supplies a risk overlay; the extractor does not.
 - **Quote everything.** Each claim gets a page number and short verbatim quote.
+- Preserve ranges and observation conventions literally. A reclaim zone does not state
+  a midpoint, closing-price comparison, or session count. Leave those fields null and
+  flag the missing execution interpretation; a later approved policy may resolve it.
+- Option premium/risk figures are raw printed values. They do not establish contract
+  dollars. Resolve multiplier, deliverable, ratio units and quote context separately.
 
 **Validator (code):**
 - Recompute spread max loss/gain and breakevens from legs and `net_price`; flag mismatches.
@@ -138,6 +143,12 @@ carries `source: {page, quote}` — the page number and a short verbatim transcr
 - Every `crown_position` references an existing `thesis_id`.
 - Any failure → `review_flags`. The plan for an affected position is held until resolved
   (during paper soak) or skipped (live, if unresolved by the decision deadline).
+
+Phase 0 implements only a preliminary offline subset via `crown audit <pdf>`: source
+page bounds, local references, dates, basic numerical consistency, and review findings.
+It does not validate ticker identity, complete option payoff arithmetic, transcription
+accuracy, or eligibility. A clean report still requires page review and grants no approval.
+Private page reviews bind to the exact extraction hash; superseded attempts are archived.
 
 ## Cross-letter linking
 
@@ -162,28 +173,30 @@ letters and many positions.
     "thesis_id": "gold-bearish-2026-06",
     "title": "Gold vulnerable to hawkish Fed / firmer real yields",
     "horizon": "weeks",
-    "invalidation": [{"kind": "price_level", "instrument": "GLD", "op": "close_above",
-                      "level": 391.5, "sessions": 1,
-                      "source": {"page": 4, "quote": "invalidation = reclaim of $391–392 zone"}}],
+    "invalidation": [{"kind": "price_level", "instrument": "GLD", "op": null,
+                      "level": null, "sessions": null,
+                      "text": "reclaim of $391–392 zone; comparison convention unresolved",
+                      "source": {"page": 9, "quote": "Invalidation is a reclaim of the $391–$392 zone"}}],
     "house_view_relation": "aligned"
   }],
   "crown_positions": [{
     "crown_position_id": "gld-385-375-put-spread-jun26",
     "thesis_id": "gold-bearish-2026-06",
     "status": "entered",
-    "instrument": {"primary": "GLD", "alternatives": [], "asset_class": "etf"},
+    "instrument": {"primary": "GLD", "alternatives": [], "asset_class": "option_on_equity"},
     "structure": {"type": "debit_put_spread",
                   "legs": [{"action": "buy", "right": "put", "strike": 385, "expiry": "2026-06-26"},
                            {"action": "sell", "right": "put", "strike": 375, "expiry": "2026-06-26"}],
                   "net_price": 3.00},
     "view": "bearish",
-    "entry": {"type": "entered", "level": 3.00, "triggered": true},
+    "entry": {"type": "entered", "level": null, "triggered": true},
     "stop": {"type": "behavioral", "rule": "reclaim of $391–392 zone"},
     "sizing_multiplier": null
   }]
 }
 ```
 
-The USDJPY conditional short in the same issue (`triggered: false` at 157.50) is a
-watch item only — it never becomes an order unless the trigger prints while the entry
-window is open.
+The USDJPY discussion in this issue does not authorize reactivating the original
+157.50 short. "No trade" and a changed setup must remain distinct from a still-valid
+pending trigger. Preserve that distinction in review until the lifecycle model can
+represent it explicitly. The inherited v1 fixture is not an audited transcription.

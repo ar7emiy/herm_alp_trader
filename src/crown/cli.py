@@ -2,6 +2,7 @@
   crown llm-check               — list OpenAI models the key can use; ping the extract model
   crown extract <pdf> | --all   — vision-extract letters into the thesis-first model (cached)
   crown inventory               — aggregate extractions into the Phase 0 inventory report
+  crown audit <pdf>             — offline validation and page-review report (no approval)
   crown probe                   — read-only Alpaca account/capability probe
 
 Legacy v1 prototype commands (superseded spec; replaced in Phase 1+):
@@ -83,7 +84,7 @@ def llm_check():
 def extract(pdf_path: Path | None, all_letters: bool, force: bool):
     """Vision-extract letter(s) into the doc 03 model. Cached per extractor
     version; costs one OpenAI call per uncached letter."""
-    from crown.letter.extract import cache_path, extract_letter, letter_pdfs
+    from crown.letter.extract import extract_letter, letter_pdfs, load_cached
     from crown.diagnostics import error_label, safe_error
 
     cfg = load_config()
@@ -93,7 +94,7 @@ def extract(pdf_path: Path | None, all_letters: bool, force: bool):
 
     failures = []
     for pdf in pdfs:
-        cached = cache_path(cfg, pdf).exists() and not force
+        cached = not force and load_cached(cfg, pdf) is not None
         click.echo(f"{pdf.name}: {'cached' if cached else 'extracting ...'}")
         try:
             rec = extract_letter(pdf, cfg=cfg, force=force)
@@ -117,9 +118,37 @@ def inventory():
     """Write the Phase 0 inventory report from cached extractions (no API calls)."""
     from crown.letter.inventory import write_report
 
-    cfg = load_config()
+    cfg = load_config(load_env=False)
     path = write_report(cfg)
     click.echo(f"Inventory written to {path}")
+
+
+@cli.command("audit")
+@click.argument("pdf_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--review-file", type=click.Path(exists=True, path_type=Path),
+              help="Private page-review JSON bound to this exact extraction hash.")
+@_friendly
+def audit(pdf_path: Path, review_file: Path | None):
+    """Check a cached extraction offline. This command never grants approval."""
+    from pypdf import PdfReader
+
+    from crown.letter.audit import PageReview, audit_record, write_audit
+    from crown.letter.extract import load_cached
+
+    cfg = load_config(load_env=False)
+    record = load_cached(cfg, pdf_path)
+    if record is None:
+        raise click.ClickException("No matching extraction cache; extract this PDF first")
+    try:
+        review = PageReview.model_validate_json(review_file.read_text(encoding="utf-8")) if review_file else None
+        report = audit_record(record, len(PdfReader(pdf_path).pages), review)
+    except ValueError:
+        raise click.ClickException("Invalid review or extraction mismatch; no audit approval was granted") from None
+    out = write_audit(report, cfg.paths.reports)
+    click.echo(f"Audit: {report.planning_status}; issues={len(report.issues)}")
+    click.echo(f"Private report: {out}")
+    if report.issues:
+        raise click.ClickException("Unresolved audit findings; extraction remains unapproved")
 
 
 @cli.command("probe")
