@@ -63,12 +63,33 @@ and forward paper evidence are required. No paper or live orders are enabled by 
 Crown letters/source PDFs, credentials, and runtime data stay local and are gitignored.
 The project requires separately supplied private letters; none are distributed with it.
 
-Phase 0 status: Alpaca paper and OpenAI read-only checks work; Robinhood is optional and
-its OAuth connection can wait. Three letters now have page-reviewed, source-corrected
-extractions with 32 passing critical checks. Raw model output still needs correction;
-this is not unattended extraction accuracy or paper readiness. The remaining 17 letters,
-reference-data decisions and later engine gates are outstanding. The old v1 compiler and
-fixture remain superseded and are not validated trade inputs.
+**Historical research replay is now usable; paper execution remains disabled.** All 20
+letters have cached v3 extractions and independent vision fact readings: 144 position rows
+and 112 thesis rows, not unique positions. Three letters retain full-page source reviews
+and 32 passing critical checks. Automated audits still report 39 structural errors across
+the corpus; only 33 of 52 plain-long rows agree on the independently read execution fields.
+Agreement is not accuracy: source review caught a no-add restriction missed by both reads.
+Alpaca/OpenAI application checks work; Robinhood remains optional and unconnected.
+
+The default `crown backtest` now uses the v3 research engine: settled-cash accounting,
+pending-order reservations, sizing/caps, stop ratchets, lifecycle/evidence timeouts, prior
+ATR, conservative daily fills and an append-only decision journal. It supports identical
+plain long stocks/ETFs only; unimplemented payoff shapes, hedges and required references
+are skips. The ATR/fractional comparison is explicitly unapproved shadow research.
+
+```powershell
+crown prepare --offline       # refresh source audits using completed caches; no API calls
+crown inventory
+crown backtest --from 2026-06-01 --to 2026-10-16 --offline
+```
+
+Open the private `index.html` path printed by the backtest. Each run also writes JSON,
+input/code hashes and SQLite decision journals under ignored `data/reports/replay/`.
+An offline rerun loads no credentials and makes no API calls. Omit `--offline` only to
+fetch missing historical IEX bars through the application's credential loading.
+The superseded Anthropic commands require explicit `legacy-compile` / `legacy-backtest`.
+See [docs/15-research-replay.md](docs/15-research-replay.md) for scope, assumptions, known
+limits and remaining paper gates. This is not a full Crown replica or a profitable strategy.
 
 Run `crown preview` to generate `data/reports/phase0-results.html`, a private offline
 report of real extracted theses, account constraints, risk budgets, source corrections

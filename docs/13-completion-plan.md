@@ -5,6 +5,11 @@ in [doc 14](14-robinhood-and-data.md). This records the user's latest priority: 
 reliable autonomous paper system; use historical replay where defensible, without making
 an exhaustive backtest a prerequisite. It does not enable orders or change runtime limits.
 
+Latest implementation checkpoint: the user also authorized a viable backtest as an
+alternative milestone. [Doc 15](15-research-replay.md) describes the completed narrow v3
+historical research replay and full 20-letter inventory. The earlier evidence below is
+historical context; outstanding paper gates have not been certified by this milestone.
+
 ## Outcome
 
 A service on a cloud VPS receives Crown letters, identifies their theses and bets,

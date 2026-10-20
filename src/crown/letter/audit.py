@@ -61,6 +61,19 @@ def record_hash(record: ExtractionRecord) -> str:
     return hashlib.sha256(record.model_dump_json().encode("utf-8")).hexdigest()
 
 
+def latest_page_review(record: ExtractionRecord, reports_dir: Path) -> PageReview | None:
+    digest = record_hash(record)
+    candidates = []
+    for path in (reports_dir / "audits").glob("*.json"):
+        try:
+            report = ExtractionAudit.model_validate_json(path.read_text(encoding="utf-8"))
+        except ValueError:
+            continue
+        if report.extraction_sha256 == digest and report.page_review is not None:
+            candidates.append(report)
+    return max(candidates, key=lambda r: r.audited_at).page_review if candidates else None
+
+
 def audit_record(record: ExtractionRecord, page_count: int,
                  review: PageReview | None = None) -> ExtractionAudit:
     if page_count < 1:

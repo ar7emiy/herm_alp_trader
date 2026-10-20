@@ -59,7 +59,7 @@ def _audits(cfg: Config, records: list[ExtractionRecord]) -> dict[str, Extractio
         if report.extraction_sha256 not in wanted:
             continue
         old = latest.get(report.extraction_sha256)
-        if old is None or report.audited_at > old.audited_at:
+        if old is None or (report.page_review is not None, report.audited_at) > (old.page_review is not None, old.audited_at):
             latest[report.extraction_sha256] = report
     return latest
 
@@ -77,7 +77,7 @@ def usage_summary(cfg: Config) -> dict:
     for path in cfg.paths.extracted_letters.rglob("*.json"):
         try:
             record = json.loads(path.read_text(encoding="utf-8"))
-            identity = (record["pdf_sha256"], record["extracted_at"],
+            identity = (record["pdf_sha256"], record.get("extracted_at", record.get("at")),
                         record.get("request_fingerprint"), record["model"])
             if identity in seen:
                 continue

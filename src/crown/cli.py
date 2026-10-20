@@ -5,9 +5,11 @@
   crown audit <pdf>             — offline validation and page-review report (no approval)
   crown probe                   — read-only Alpaca account/capability probe
 
+  crown backtest --from --to    — v3 cash-only historical research replay
+
 Legacy v1 prototype commands (superseded spec; replaced in Phase 1+):
-  crown compile <letter.pdf>    — v1 parse + contingent plan (Anthropic)
-  crown backtest [--from --to]  — v1 replay
+  crown legacy-compile <pdf>    — v1 parse + contingent plan (Anthropic)
+  crown legacy-backtest        — v1 replay, explicitly opt-in
   crown report <path>           — print a v1 backtest report
 """
 from __future__ import annotations
@@ -123,6 +125,19 @@ def inventory():
     click.echo(f"Inventory written to {path}")
 
 
+@cli.command("prepare")
+@click.option("--workers", type=click.IntRange(1, 4), default=4, show_default=True)
+@click.option("--offline", is_flag=True, help="Refresh audits from caches only; no credentials or API calls.")
+@_friendly
+def prepare(workers: int, offline: bool):
+    """Bounded corpus extraction and independent facts; research review only."""
+    from crown.letter.prepare import prepare_corpus
+
+    result = prepare_corpus(load_config(load_env=not offline), workers, lambda message: click.echo(message), offline)
+    if any(r["status"] == "failed" for r in result["results"]):
+        raise click.ClickException("Some letters failed; successful reads are cached, no execution enabled")
+
+
 @cli.command("audit")
 @click.argument("pdf_path", type=click.Path(exists=True, path_type=Path))
 @click.option("--review-file", type=click.Path(exists=True, path_type=Path),
@@ -195,10 +210,28 @@ def probe():
 
 
 # ---------------------------------------------------------------------------
-# Legacy v1 prototype
+# Historical research
 # ---------------------------------------------------------------------------
 
-@cli.command("compile")
+@cli.command("backtest")
+@click.option("--from", "start", type=click.DateTime(formats=["%Y-%m-%d"]), required=True)
+@click.option("--to", "end_date", type=click.DateTime(formats=["%Y-%m-%d"]), required=True)
+@click.option("--policy", "policy_name", type=click.Choice(["strict","protective_research","both"]), default="both", show_default=True)
+@click.option("--offline", is_flag=True, help="Use hash-validated caches only; never load credentials or call APIs.")
+@click.option("--out", type=click.Path(path_type=Path), help="New output folder under data/reports/ (must not already exist).")
+@_friendly
+def research_backtest(start, end_date, policy_name, offline, out):
+    """Replay v3 letters with a settled-cash ledger and explicit research limits."""
+    from crown.research.app import backtest
+
+    path, results=backtest(load_config(load_env=not offline),start.date(),end_date.date(),policy_name,offline,out)
+    for r in results:
+        click.echo(f"{r['policy']['name']}: entries={r['counts'].get('entry_fill',0)}, "
+                   f"net price P&L=${float(r['net_pnl']):,.2f}, drawdown={float(r['max_drawdown_pct']):.2f}%")
+    click.echo(f"Private results: {path}")
+    click.echo("Historical research only; no broker orders or paper permissions enabled.")
+
+@cli.command("legacy-compile")
 @click.argument("pdf_path", type=click.Path(exists=True, path_type=Path))
 @click.option("--force", is_flag=True, help="Re-parse even if a cached result exists.")
 @_friendly
@@ -225,7 +258,7 @@ def compile_letter(pdf_path: Path, force: bool):
                    f"method={trade.size.method:26s} reason={trade.skip_reason or ''}")
 
 
-@cli.command()
+@cli.command("legacy-backtest")
 @click.option("--from", "start", type=str, default=None,
               help="YYYY-MM-DD, defaults to config.yaml backtest.start_date")
 @click.option("--to", "end_date", type=str, default=None,

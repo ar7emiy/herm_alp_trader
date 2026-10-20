@@ -96,7 +96,7 @@ Read `docs/13-completion-plan.md` and `docs/14-robinhood-and-data.md` after docs
 They specify the user's current priority: autonomous paper within an owner-set policy,
 plus a private dashboard; exhaustive historical backtesting is optional. Phase 0 still
 comes first, and no live adapters are built before the preceding phase gates. The
-suite has 79 passing tests after Phase 0 extraction/results work on 2026-10-19; this is not paper readiness.
+suite has 112 offline tests after the v3 research replay work; this is not paper readiness.
 Robinhood is researched but unconnected and is intended as a read-tool-allowlisted
 research source. Alpaca remains the execution broker. Keep source PDFs, extracts,
 credentials, and runtime account data out of git.
@@ -105,8 +105,11 @@ Three v3.1 letter extractions (June 1, June 22, October 19) have full-page Codex
 reviews and explicitly sourced corrections; 32 critical checks pass on the corrected
 records. Raw model output still misses critical fields/observations and has date/source
 errors. This is not proof of unattended extraction accuracy or 98% full-field accuracy.
-The private offline preview shows 19 position/setup rows. The other 17 letters and the
-full inventory remain outstanding; automate critical verification before bulk API calls.
+All 20 letters now have v3.1 caches and independent fact readings (same configured model,
+different prompt; shared errors are possible). The inventory contains 144 position rows,
+112 thesis rows, 39 structural audit errors, and 33/52 plain-long fact agreements.
+These are unapproved research inputs, not verified unattended extraction. Further API
+calls must be targeted to missing/changed inputs; do not force-reextract the corpus.
 Findings, corrections, rendered pages and HTML results stay under ignored `data/`.
 The inherited v1 fixture is incomplete and has unsafe unit/midpoint assumptions; it is
 not a gold set. Audit/correct/preview commands never grant approval; execution remains
@@ -119,3 +122,24 @@ display `.env` in assistant output. Offline tooling/tests use `load_config(load_
 The probe is paper-only and never verifies settled cash, legal account type, order
 acceptance, or live capabilities from account/asset flags. `constraints.txt` records the
 tested direct dependency versions; CI runs offline tests and checks tracked private paths.
+
+## Historical research alternative
+
+Read `docs/15-research-replay.md`. The latest user authorized proceeding until paper
+execution OR backtesting is viable. `crown backtest` now runs `src/crown/research/`, an
+offline-first, narrow v3 replay with a cash ledger and source-bound decisions. The v1
+commands are explicitly `legacy-compile` and `legacy-backtest`; normal tooling uses
+OpenAI, not Anthropic. No paper/live order adapter was added, and phase gates were not
+declared passed by this research milestone. Do not connect this one-shot daily simulator
+to a broker as if it were a restartable execution service.
+
+Research supports identical plain long stocks/ETFs only, with explicit skips for missing
+references, mismatched facts, conditional triggers, and unsupported companion hedges.
+All exposures share a conservative thesis/cluster until semantic linking is verified.
+`strict` needs a usable published entry and stop convention; `protective_research` adds
+explicit unapproved ATR, fractional and timing assumptions. Never loosen a printed
+numeric stop because its observation convention is ambiguous. Never describe historical
+model reads as contemporaneously available data or the report as causal performance.
+Reports, manifests, source reviews and journals stay under ignored `data/`; replay output
+cannot escape the configured private reports directory. `prepare --offline`, `inventory`,
+`preview` and `backtest --offline` do not load `.env` or call providers.

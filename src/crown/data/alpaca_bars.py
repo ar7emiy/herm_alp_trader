@@ -6,14 +6,18 @@ real-time restriction."""
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
+import hashlib
+import json
 from pathlib import Path
 
 import pandas as pd
+from alpaca.data.enums import Adjustment, DataFeed
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
 
 from crown.config import Config, alpaca_credentials
+from crown.diagnostics import error_label, safe_error
 
 BAR_COLUMNS = ["open", "high", "low", "close", "volume"]
 
@@ -37,8 +41,19 @@ def _fetch_bars(
     missing: list[str] = []
 
     for sym in symbols:
-        path = _cache_path(cfg, f"{sym}{cache_suffix}", start, end)
-        if path.exists() and not force:
+        path = _cache_path(cfg, f"{sym}_iex_raw{cache_suffix}", start, end)
+        meta = path.with_suffix(".json")
+        valid = False
+        if path.exists() and meta.exists() and not force:
+            try:
+                metadata = json.loads(meta.read_text(encoding="utf-8"))
+                expected = {"symbol": sym, "feed": "iex", "adjustment": "raw", "asof": "-",
+                            "timeframe": str(timeframe), "start": str(start), "end_exclusive": str(end)}
+                valid = (all(metadata.get(k) == v for k, v in expected.items())
+                         and metadata.get("sha256") == hashlib.sha256(path.read_bytes()).hexdigest())
+            except ValueError:
+                pass
+        if valid:
             result[sym] = pd.read_parquet(path)
         else:
             missing.append(sym)
@@ -53,18 +68,28 @@ def _fetch_bars(
         timeframe=timeframe,
         start=datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc),
         end=datetime.combine(end, datetime.min.time(), tzinfo=timezone.utc),
-        adjustment="raw",
+        adjustment=Adjustment.RAW, feed=DataFeed.IEX, asof="-",
     )
-    df = client.get_stock_bars(request).df
+    try:
+        df = client.get_stock_bars(request).df
+    except Exception as exc:
+        raise RuntimeError(f"Historical bars failed: {error_label(safe_error(exc))}") from None
 
     for sym in missing:
-        if sym not in df.index.get_level_values(0):
+        if df.empty or sym not in df.index.get_level_values(0):
             sym_df = pd.DataFrame(columns=BAR_COLUMNS)
             sym_df.index.name = "timestamp"
         else:
             sym_df = df.xs(sym, level=0)[BAR_COLUMNS].copy()
             sym_df.index = pd.to_datetime(sym_df.index, utc=True)
-        sym_df.to_parquet(_cache_path(cfg, f"{sym}{cache_suffix}", start, end))
+        path = _cache_path(cfg, f"{sym}_iex_raw{cache_suffix}", start, end)
+        sym_df.to_parquet(path)
+        path.with_suffix(".json").write_text(json.dumps({
+            "symbol": sym, "feed": "iex", "adjustment": "raw", "asof": "-",
+            "timeframe": str(timeframe), "start": str(start), "end_exclusive": str(end),
+            "queried_at": datetime.now(timezone.utc).isoformat(), "rows": len(sym_df),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        }, indent=2), encoding="utf-8")
         result[sym] = sym_df
 
     return result
