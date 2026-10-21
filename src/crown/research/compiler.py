@@ -28,6 +28,8 @@ class LetterBatch:
 
 
 def availability(record, approval_minutes=45):
+    if approval_minutes < 0:
+        raise ValueError("Approval latency cannot be negative")
     if record.received_at:
         at = datetime.fromisoformat(record.received_at.replace("Z", "+00:00"))
         if not at.tzinfo:
@@ -46,9 +48,16 @@ def compile_records(sources, policy: ResearchPolicy, approval_minutes=45):
     A stopped-out episode cannot be re-entered merely because it appears again.
     """
     active, episodes, batches, last_keys = {}, {}, [], {}
-    for rec, verified, pages in sorted(sources, key=lambda r: r[0].extraction.letter_date):
+    latest_date = ""
+    # Episode identity must follow information availability, not printed dates.
+    # A delayed old closure cannot create a new earlier episode retroactively.
+    for rec, verified, pages in sorted(sources, key=lambda r: (availability(r[0], approval_minutes)[0], r[0].extraction.letter_date)):
         x = rec.extraction
         at, timing = availability(rec, approval_minutes)
+        if x.letter_date < latest_date:
+            batches.append(LetterBatch(at, x.letter_date, (), (), "Late older letter; no episode or plan mutation"))
+            continue
+        latest_date = x.letter_date
         days = trading_days(at.date(), at.date() + timedelta(days=30))
         expiry = days[min(policy.max_letter_age_sessions - 1, len(days)-1)]
         rhash = record_hash(rec)
@@ -126,7 +135,7 @@ def compile_records(sources, policy: ResearchPolicy, approval_minutes=45):
             if not policy.atr_protection and (kind not in {"touch", "close"} or stop is None or (kind=="close" and not sessions)):
                 reasons.append("No unambiguous protective observation rule/session count")
             if policy.atr_protection:
-                deviations.append("Tier-2 shadow only: higher of printed numeric stop and 2 ATR; ambiguous convention becomes touch; 3 ATR close-based trail after +1R; fractional 0.001 shares")
+                deviations.append(f"Tier-2 shadow only: higher of printed numeric stop and {policy.atr_multiple} ATR; ambiguous convention becomes touch; {policy.trail_multiple} ATR close-based trail after +1R; share increment {policy.share_step}")
                 # Unknown consecutive-close count is never invented for a source stop.
                 if kind == "close" and not sessions:
                     kind = "ambiguous"
@@ -176,17 +185,23 @@ def compile_records(sources, policy: ResearchPolicy, approval_minutes=45):
 
 
 def load_sources(cfg):
+    from crown.letter.receipt import load_receipt
     sources, manifest, missing = [], [], []
     for pdf in letter_pdfs(cfg):
         rec, verified = load_cached(cfg, pdf), load_verification(pdf, cfg)
         if rec is None or verified is None:
             missing.append(pdf.name)
             continue
+        receipt = load_receipt(cfg, rec.pdf_sha256)
+        if receipt and not rec.received_at:
+            # Preserve the cached extraction/correction chain. This copy binds
+            # code-owned receipt evidence into the experiment's record hash.
+            rec = rec.model_copy(update={"received_at": receipt["received_at"]})
         pages = len(PdfReader(pdf).pages)
         sources.append((rec, verified, pages))
         manifest.append({"pdf": pdf.name, "pdf_sha256": rec.pdf_sha256,
                          "record_sha256": record_hash(rec), "verification_sha256": digest(verified.model_dump()),
-                         "received_at": rec.received_at, "pages": pages,
+                         "received_at": rec.received_at, "receipt": receipt, "pages": pages,
                          "review_flags": [f.model_dump() for f in rec.extraction.review_flags]})
     if missing:
         raise RuntimeError("Corpus inventory incomplete; prepare missing reads first: " + ", ".join(missing))

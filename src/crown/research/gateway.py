@@ -165,7 +165,8 @@ class Gateway:
                 protection_kind=r.protection_kind,mark=price,entered_at=at,best_close=price)
         state.applied_fills.add(fill_id)
         self.record(at,"entry_fill","Simulated fill; no broker order was submitted",plan,
-                    fill_id=fill_id,intent_id=r.intent_id,price=price,quantity=quantity,cost=charge)
+                    fill_id=fill_id,intent_id=r.intent_id,price=price,quantity=quantity,cost=charge,
+                    fee=fee(price*quantity,self.policy.fee_bps))
         self.state=state
         self.entered_episodes.add(plan.position_id)
         return True
@@ -192,7 +193,8 @@ class Gateway:
             del state.holdings[position_id]
         state.applied_fills.add(fill_id)
         self.record(at,"exit_fill",reason,h.plan,fill_id=fill_id,quantity=quantity,price=price,
-                    realized_pnl=pnl,proceeds_unsettled=proceeds,funding_day=next_funding_day(at.date()))
+                    realized_pnl=pnl,proceeds_unsettled=proceeds,funding_day=next_funding_day(at.date()),
+                    fee=fee(price*quantity,self.policy.fee_bps))
         self.state=state
         return pnl
 

@@ -284,11 +284,11 @@ accuracy, stop coverage, data failures, fidelity, skipped trades, and execution 
 Retain the 4-8 week paper soak before considering live, with no guardrail-relevant errors.
 Paper fills are simulation evidence, not proof of live liquidity or profitability.
 
-## Phases 7-8 - Separate live launch and earned autonomy
+## Phases 7-8 - Withdrawn: paper only
 
-Follow doc 07: explicit owner authorization, verified live capabilities, recovery drills,
-L0 live entries first, then category promotion from recorded evidence. Changing an API
-key alone must not activate live trading. No live launch is authorized by this plan.
+The owner's 2026-10-21 instruction prohibits real-money trading. Earlier live-launch
+references in this document are superseded. Continue only research and bounded paper
+operation. `ALPACA_PAPER` cannot enable live mode; values other than `true` are rejected.
 
 ## Paper-ready declaration
 

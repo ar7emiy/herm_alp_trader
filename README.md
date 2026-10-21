@@ -5,10 +5,10 @@ from a macro hedge-fund desk — inside a small, cash-only account. Crown does t
 and picks the bets. This system's job is to **express each bet as faithfully as the
 account's constraints allow, and to explain every place it had to deviate.**
 
-> **This is not investment advice and not a guarantee of profit.** Automated trading can
-> lose money quickly. You are responsible for every trade this system places. Build it in
-> paper mode, measure it against Crown's own book, and move real money only once you trust
-> it.
+> **Paper only, by owner instruction (2026-10-21). Real-money trading is prohibited.**
+> `ALPACA_PAPER` must be `true`; other values are rejected before Alpaca credentials are
+> accessed. There is no live-mode switch or broker order adapter. Profitability is an
+> empirical research objective, not an established property of this system.
 
 ---
 
@@ -49,6 +49,23 @@ Read in order. These are the build spec.
 | [docs/12-glossary.md](docs/12-glossary.md) | Crown's vocabulary and operating principles (from the base guide) |
 
 ## Current completion plan (2026-10-19)
+
+**2026-10-21 research update:** [doc 16](docs/16-research-laboratory.md) records the system
+audit, quantitative research process, free-data priorities and current implementation.
+`crown lab` runs nine independent $5,000 simulations, records every hypothesis before
+execution, compares costs/risk/timing, and builds source-linked Crown evidence dossiers.
+It includes chronological training/validation with an explicit insufficient-evidence
+outcome. Previously examined history is never relabeled as an untouched holdout.
+
+```powershell
+crown lab --from 2026-06-01 --to 2026-10-16  # always offline; no credentials
+crown receive path/to/new-letter.pdf       # capture first local receipt now, never backdate
+```
+
+Multiple budgets are virtual independent accounts, not Alpaca subaccounts. Every account
+has its own cash, reservations, loss limits and journal; broker execution remains disabled.
+The lab does not remove source/fidelity gates to manufacture trades. Free-data evidence
+primitives and a Robinhood read-tool boundary are tested foundations, not connected feeds.
 
 The baseline is committed; the trading service and website are still to be built.
 [docs/13-completion-plan.md](docs/13-completion-plan.md) defines the path to autonomous
@@ -113,6 +130,7 @@ or private inputs belong in git.
 | D8 | **Orchestration: our own Python service** (systemd) with a deterministic scheduler, replacing the earlier Hermes-agent plan. The backtest and live system run the same engine; only the clock, data, approval and order adapters differ. The LLM never edits the schedule — cadence is computed by code. | Proposed — confirm |
 | D9 | **Where it runs: cloud VPS**, not a home machine, for an independent control plane (provider dashboard hard-stop, SSH from anywhere). | Decided |
 | D10 | **Prediction markets: out of scope for v1.** Alpaca does not offer them; a second venue (e.g. Kalshi) adds a second failure surface. Revisit after paper soak. | Decided |
+| D11 | **Paper only, permanently within the current mandate.** No real-money orders, no environment toggle to live. Earlier live-launch phases are withdrawn. | Decided 2026-10-21 |
 
 ## High-level flow
 

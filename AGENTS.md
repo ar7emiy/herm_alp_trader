@@ -20,6 +20,11 @@ comes first; don't skip to live trading or live adapters.**
 
 ## Non-negotiables
 
+- **Owner update 2026-10-21: paper only.** Real-money trading is prohibited. Keep
+  `ALPACA_PAPER=true`; reject all other values before credential access. This supersedes
+  every old live-launch phase. Do not add a live override. Multiple $5k research budgets
+  are independent simulated ledgers, not permission to spend pooled broker funds.
+
 - **Crown is the signal.** The system never invents a thesis or a direction. Its own
   judgment is limited to implementation (instrument, size granularity, timing, risk
   overlays), and every deviation is tagged with a tier (doc 05) and attributed in
@@ -143,3 +148,15 @@ model reads as contemporaneously available data or the report as causal performa
 Reports, manifests, source reviews and journals stay under ignored `data/`; replay output
 cannot escape the configured private reports directory. `prepare --offline`, `inventory`,
 `preview` and `backtest --offline` do not load `.env` or call providers.
+
+## Research laboratory (2026-10-21)
+
+Read `docs/16-research-laboratory.md`. `crown lab --from YYYY-MM-DD --to YYYY-MM-DD`
+is always offline and records nine fixed $5k ablations plus chronological selection
+checks. Registrations persist before replay, failures remain visible, and no historical
+winner can promote itself to broker execution. Already inspected history is exploratory.
+Receipt capture (`crown receive`) records first local capture now, never a historical
+delivery timestamp. Risk percentages now follow sleeve size; explicit dollar caps remain
+explicit. Episode compilation follows information availability and ignores late old letters.
+The evidence time/unit/freshness layer and Robinhood read-tool boundary are foundations;
+no source adapters/OAuth connections or autonomous broker service were added by this work.

@@ -70,6 +70,8 @@ class ResearchPolicy:
             raise ValueError("Costs cannot be negative")
         if self.max_letter_age_sessions<1 or self.atr_sessions<1 or self.daily_loss_limit<=0 or self.weekly_loss_limit<=0:
             raise ValueError("Evidence, ATR windows and loss limits must be positive")
+        if self.atr_multiple <= 0 or self.trail_multiple <= 0 or self.max_chase < 0:
+            raise ValueError("ATR multipliers must be positive and chase bound nonnegative")
 
     @classmethod
     def protective_research(cls, **kwargs):

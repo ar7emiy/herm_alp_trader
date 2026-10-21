@@ -66,3 +66,14 @@ def test_missing_companion_hedge_blocks_otherwise_valid_core():
     r.extraction.crown_positions[0].hedges_position_keys=["unsupported-put"]
     p=compile_records([(r,v,n)],ResearchPolicy.protective_research())[0].plans[0]
     assert not p.allowed and any("hedge" in reason for reason in p.reasons)
+
+
+def test_late_old_closure_cannot_change_an_episode_before_receipt():
+    first = source()
+    late = source("2026-06-08", positions=[_position("p", "XYZ", "long", "bullish", status="closed")],
+                  facts=[fact(state="closed")])
+    late[0].received_at = "2026-06-30T13:00:00+00:00"
+    newer = source("2026-06-15")
+    bs = compile_records([first, late, newer], ResearchPolicy())
+    assert bs[0].plans[0].position_id == bs[1].plans[0].position_id
+    assert bs[2].plans == () and bs[2].closures == ()

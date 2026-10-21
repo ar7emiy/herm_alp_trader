@@ -64,6 +64,20 @@ backtest:
   approval_latency_minutes: 45
   approval_rate: 1.0            # fraction of well-formed staged trades approved
 
+# Research assumptions, versioned with every experiment. No broker permissions.
+# Risk fractions follow the sleeve; explicit guardrail dollar limits above remain caps.
+research:
+  reserve_fraction: 0.10
+  max_open_risk_fraction: 0.06
+  max_thesis_risk_units: 1.5
+  max_cluster_risk_fraction: 0.03
+  weekly_loss_fraction: 0.06
+  slippage_bps: 5
+  fee_bps: 1
+  max_letter_age_sessions: 5
+  atr_multiple: 2
+  trail_multiple: 3
+
 paths:
   parsed_letters: "data/parsed"
   plans: "data/plans"
@@ -93,7 +107,7 @@ llm:
 # the most restrictive settings apply.
 capabilities:
   account_type: "cash"            # D2 — decided
-  verified: false                 # set true once `crown probe` confirms against the live account
+  verified: false                 # GET probe alone cannot verify paper order/settlement behavior
   options_level: 0                # 0 = no options until verified
   allow_debit_spreads: false
   allow_long_options: false

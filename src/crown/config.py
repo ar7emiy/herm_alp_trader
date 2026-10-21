@@ -135,6 +135,20 @@ class CapabilitiesConfig:
 
 
 @dataclass(frozen=True)
+class ResearchConfig:
+    reserve_fraction: float = 0.10
+    max_open_risk_fraction: float = 0.06
+    max_thesis_risk_units: float = 1.5
+    max_cluster_risk_fraction: float = 0.03
+    weekly_loss_fraction: float = 0.06
+    slippage_bps: float = 5
+    fee_bps: float = 1
+    max_letter_age_sessions: int = 5
+    atr_multiple: float = 2
+    trail_multiple: float = 3
+
+
+@dataclass(frozen=True)
 class Config:
     sizing: SizingConfig
     guardrails: GuardrailsConfig
@@ -146,6 +160,7 @@ class Config:
     model: ModelConfig
     llm: LLMConfig
     capabilities: CapabilitiesConfig
+    research: ResearchConfig = ResearchConfig()
 
 
 def load_config(path: str | Path | None = None, *, load_env: bool = True) -> Config:
@@ -182,6 +197,7 @@ def load_config(path: str | Path | None = None, *, load_env: bool = True) -> Con
         model=ModelConfig(**raw["model"]),
         llm=LLMConfig(**raw["llm"]),
         capabilities=CapabilitiesConfig(**raw["capabilities"]),
+        research=ResearchConfig(**raw.get("research", {})),
     )
 
 
@@ -193,8 +209,10 @@ def openai_api_key() -> str:
 
 
 def alpaca_is_paper() -> bool:
-    """Defaults to paper. Only an explicit ALPACA_PAPER=false selects live."""
-    return os.environ.get("ALPACA_PAPER", "true").strip().lower() not in ("false", "0", "no")
+    """Owner's hard paper-only boundary; no environment switch can enable live."""
+    if os.environ.get("ALPACA_PAPER", "true").strip().lower() != "true":
+        raise RuntimeError("This project is paper-only; ALPACA_PAPER must be true")
+    return True
 
 
 def anthropic_api_key() -> str:
@@ -205,6 +223,7 @@ def anthropic_api_key() -> str:
 
 
 def alpaca_credentials() -> tuple[str, str]:
+    alpaca_is_paper()  # Reject unsafe mode before reading either credential.
     key = os.environ.get("ALPACA_API_KEY")
     secret = os.environ.get("ALPACA_SECRET_KEY")
     if not key or not secret:

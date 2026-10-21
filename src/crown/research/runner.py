@@ -145,7 +145,7 @@ def run(batches, bars, policy, start, end, manifest_hash, journal_path=None):
                     if atr:
                         trail=h.best_close-policy.trail_multiple*atr
                         if trail>h.stop:
-                            g.tighten(pid,trail,closed,"3 ATR trail from known closes; effective next session")
+                            g.tighten(pid,trail,closed,f"{policy.trail_multiple} ATR trail from known closes; effective next session")
                             h.protection_kind="touch"
             value=g.state.equity
             peak=max(peak,value)

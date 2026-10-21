@@ -2,8 +2,8 @@
 
 > 2026-10-19 launch clarification: the intended paper release can run unattended within
 > an explicit owner-set category policy (doc 13). Live entries remain governed by doc 07.
-> A future live launch requires a separate explicit configuration/authorization gate;
-> changing keys alone must never switch the system into live trading.
+> Owner update 2026-10-21: real-money trading is prohibited. There is no live mode;
+> `ALPACA_PAPER` must remain `true`. Earlier live-launch instructions are superseded.
 
 Current implementation: use the offline historical commands in
 [doc 15](15-research-replay.md). The normal-week service, broker protection, approvals,
@@ -56,8 +56,7 @@ After any halt, read the decision log before restarting. Find the root cause fir
 
 ## Mode discipline
 
-- Paper→live requires an explicit endpoint and permission gate as well as credentials.
-  Changing keys alone must never enable live trading.
+- Real-money mode is prohibited; values other than `ALPACA_PAPER=true` are rejected.
 - Never disable guardrails to "let it try something."
 - Autonomy changes only through the doc 07 promotion criteria, recorded in config with a date.
 

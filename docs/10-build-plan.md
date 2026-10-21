@@ -1,5 +1,9 @@
 # 10 — Build Plan
 
+> 2026-10-21 owner mandate: real-money trading is prohibited. Paper only; see doc 16.
+> Earlier references to later live deployment are superseded. Phase gates still apply
+> to paper execution; research experiments do not waive them.
+
 > 2026-10-19 completion update: [doc 13](13-completion-plan.md) refines these phases for
 > autonomous paper and a private website; [doc 14](14-robinhood-and-data.md) covers provider
 > research. Preserve phase order. Phase 4 requires deterministic operational scenarios and
@@ -115,15 +119,11 @@ round-tripped, monitors running, all logged.
 
 **Exit:** doc 09 paper-soak criteria met.
 
-## Phase 7 — Live at L0
+## Subsequent phases — Paper research and bounded paper autonomy only
 
-- [ ] Fund the account with an amount you can afford to lose.
-- [ ] Switch to live keys. Change nothing else that day.
-- [ ] Every entry approved; risk-reducing actions automatic (D7).
-
-## Phase 8 — Graduated autonomy
-
-- [ ] Promote categories one level at a time per doc 07 criteria; demotion automatic.
+Real-money launch is withdrawn by the owner. Never switch to live keys or add a live
+mode. Improve paper evidence, extraction, coverage, execution recovery and attribution;
+paper category permissions remain owner-controlled.
 
 ## Migrating the v1 prototype (`src/crown/`)
 

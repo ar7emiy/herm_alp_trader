@@ -213,6 +213,32 @@ def probe():
 # Historical research
 # ---------------------------------------------------------------------------
 
+@cli.command("receive")
+@click.argument("pdf_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@_friendly
+def receive_letter(pdf_path):
+    """Store a private letter and capture its first local receipt NOW (offline)."""
+    from crown.letter.receipt import receive
+    pdf, receipt = receive(pdf_path, load_config(load_env=False))
+    click.echo(f"Private letter: {pdf}")
+    click.echo(f"Receipt evidence: {receipt}")
+    click.echo("First local capture only; extraction and source validation still required.")
+
+
+@cli.command("lab")
+@click.option("--from", "start", type=click.DateTime(formats=["%Y-%m-%d"]), required=True)
+@click.option("--to", "end_date", type=click.DateTime(formats=["%Y-%m-%d"]), required=True)
+@click.option("--out", type=click.Path(path_type=Path))
+@_friendly
+def research_lab(start, end_date, out):
+    """Compare isolated $5k portfolios and Crown evidence; always offline."""
+    from crown.research.lab import laboratory
+    path, study = laboratory(load_config(load_env=False), start.date(), end_date.date(), out, click.echo)
+    for s in study["summaries"]:
+        click.echo(f"{s['name']}: {s['entries']} entries, ${float(s['net_pnl']):,.2f} net price P&L")
+    click.echo(f"Private laboratory: {path}")
+    click.echo("Exploratory results; no strategy promoted, no broker orders, no live mode.")
+
 @cli.command("backtest")
 @click.option("--from", "start", type=click.DateTime(formats=["%Y-%m-%d"]), required=True)
 @click.option("--to", "end_date", type=click.DateTime(formats=["%Y-%m-%d"]), required=True)
